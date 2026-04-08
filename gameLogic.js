@@ -21,13 +21,12 @@ export const manifest = {
 };
 
 function saveStats() {
-    localStorage.setItem('yardbirdStatsV6', JSON.stringify(state.userStats));
-    populateStats();
+    localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
 }
 
 export function resetStats() {
     if(confirm("Are you sure you want to reset all lifetime stats and trophies? This cannot be undone.")) {
-        state.userStats = { gamesPlayed: 0, totalGuesses: 0, correctGuesses: 0, hsText: 0, hsMC: 0, sniperHits: 0, lastPlayedDate: null, currentStreak: 0, playedDailyToday: false, modesPlayed: { genre: false, artist: false, movie: false }, trophies: { perf: false, mara: false, snip: false, streak: false, expl: false } };
+        state.userStats.song_trivia = { gamesPlayed: 0, totalGuesses: 0, correctGuesses: 0, hsText: 0, hsMC: 0, sniperHits: 0, lastPlayedDate: null, currentStreak: 0, playedDailyToday: false, modesPlayed: { genre: false, artist: false, movie: false }, trophies: { perf: false, mara: false, snip: false, streak: false, expl: false } };
         saveStats();
         document.querySelectorAll('.trophy-row').forEach(row => row.classList.remove('unlocked'));
         const dailyBtn = document.getElementById('daily-btn-top');
@@ -429,11 +428,11 @@ function launchGameUI() {
     if(state.isDailyMode) { document.getElementById('main-title').innerText = "🌍 TODAY THREE CHALLENGE"; }
     
     if (!state.isDailyMode) {
-        if (state.gameState.mode === 'genre') state.userStats.modesPlayed.genre = true;
-        if (state.gameState.mode === 'artist') state.userStats.modesPlayed.artist = true;
-        if (state.gameState.mode === 'movie') state.userStats.modesPlayed.movie = true;
-        if (state.userStats.modesPlayed.genre && state.userStats.modesPlayed.artist && state.userStats.modesPlayed.movie) {
-            state.userStats.trophies.expl = true;
+        if (state.gameState.mode === 'genre') state.userStats.song_trivia.modesPlayed.genre = true;
+        if (state.gameState.mode === 'artist') state.userStats.song_trivia.modesPlayed.artist = true;
+        if (state.gameState.mode === 'movie') state.userStats.song_trivia.modesPlayed.movie = true;
+        if (state.userStats.song_trivia.modesPlayed.genre && state.userStats.song_trivia.modesPlayed.artist && state.userStats.song_trivia.modesPlayed.movie) {
+            state.userStats.song_trivia.trophies.expl = true;
         }
     }
     nextTrack();
@@ -681,10 +680,10 @@ export function evaluateGuess(isCorrectMC = null) {
     }
 
     state.matchHistory[pIdx].push(correct ? (state.hasUsedLifeline ? '🟨' : '🟩') : '🟥');
-    state.userStats.totalGuesses++;
+    state.userStats.song_trivia.totalGuesses++;
     if (correct) {
-        state.userStats.correctGuesses++;
-        if (!state.hasUsedLifeline && state.scoreLock >= 27) state.userStats.sniperHits++;
+        state.userStats.song_trivia.correctGuesses++;
+        if (!state.hasUsedLifeline && state.scoreLock >= 27) state.userStats.song_trivia.sniperHits++;
     }
 
     let fbHTML = ""; const succColor = "var(--success)"; const failColor = "var(--fail)";
@@ -853,20 +852,21 @@ function endGameSequence() {
         gridHTML += '</div>'; document.getElementById('final-grid').innerHTML = gridHTML;
     }
 
-    state.userStats.gamesPlayed++;
-    if (maxScore > state.userStats.hsText) state.userStats.hsText = maxScore;
-    if (maxScore > 900) state.userStats.trophies.perf = true;
-    if (state.roundsPerPlayer >= 20) state.userStats.trophies.mara = true;
-    if (state.userStats.sniperHits >= 10) state.userStats.trophies.snip = true;
-    if (state.isDailyMode) state.userStats.playedDailyToday = true;
+    state.userStats.song_trivia.gamesPlayed++;
+    state.userStats.platformGamesPlayed++;
+    if (maxScore > state.userStats.song_trivia.hsText) state.userStats.song_trivia.hsText = maxScore;
+    if (maxScore > 900) state.userStats.song_trivia.trophies.perf = true;
+    if (state.roundsPerPlayer >= 20) state.userStats.song_trivia.trophies.mara = true;
+    if (state.userStats.song_trivia.sniperHits >= 10) state.userStats.song_trivia.trophies.snip = true;
+    if (state.isDailyMode) state.userStats.song_trivia.playedDailyToday = true;
 
     const todayStr = new Date().toDateString();
-    if (state.userStats.lastPlayedDate !== todayStr) {
+    if (state.userStats.song_trivia.lastPlayedDate !== todayStr) {
         let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-        if (state.userStats.lastPlayedDate === yesterday.toDateString()) state.userStats.currentStreak++; else state.userStats.currentStreak = 1;
-        state.userStats.lastPlayedDate = todayStr;
+        if (state.userStats.song_trivia.lastPlayedDate === yesterday.toDateString()) state.userStats.song_trivia.currentStreak++; else state.userStats.song_trivia.currentStreak = 1;
+        state.userStats.song_trivia.lastPlayedDate = todayStr;
     }
-    if (state.userStats.currentStreak >= 5) state.userStats.trophies.streak = true;
+    if (state.userStats.song_trivia.currentStreak >= 5) state.userStats.song_trivia.trophies.streak = true;
     saveStats();
 
     if (maxScore > state.globalHighScore && maxScore > 0) { localStorage.setItem('yardbirdHighScore', maxScore); document.getElementById('new-record-msg').style.display = 'block'; }
