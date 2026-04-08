@@ -1,14 +1,12 @@
 // app.js
 import { state } from './state.js';
-import { showModal, hideModal, setMode, setSub, setPill, setLevel, renderPlaylist, renderSubPills, populateStats, setupDailyButton, buildSetupScreen } from './ui.js';
+import { showModal, hideModal, setMode, setSub, setPill, setLevel, renderPlaylist, renderSubPills, setupDailyButton, buildSetupScreen, updatePlatformUI } from './ui.js';
 import { handleHostSetup, handleJoinScreen, createRoom, joinRoom, startMultiplayerGame, cancelLobby, cancelActiveGame, submitClientTextGuess, requestClientLifeline } from './multiplayer.js';
 
-// 🎮 IMPORT ALL AVAILABLE CARTRIDGES
 import * as SongTrivia from './gameLogic.js';
 import * as FastMath from './mathLogic.js';
 
-// 🔌 Use 'let' so we can dynamically swap it when the user clicks a button!
-let activeCartridge = SongTrivia; // Default fallback
+let activeCartridge = SongTrivia; 
 
 window.showModal = showModal; window.hideModal = hideModal;
 window.setMode = setMode; window.setSub = setSub; window.setPill = setPill; window.setLevel = setLevel;
@@ -19,16 +17,22 @@ window.startMultiplayerGame = startMultiplayerGame; window.cancelLobby = cancelL
 window.cancelActiveGame = cancelActiveGame; window.submitClientTextGuess = submitClientTextGuess;
 window.requestClientLifeline = requestClientLifeline;
 
-// 🕹️ NEW: THE CARTRIDGE LOADER
-window.selectGame = (gameId) => {
-    // 1. Swap the internal active cartridge
+// 🕹️ NEW: THE UNIVERSAL CARTRIDGE LOADER
+window.loadCartridge = (gameId) => {
     activeCartridge = gameId === 'fast_math' ? FastMath : SongTrivia;
+    state.activeCartridgeId = gameId;
     
-    // 2. Build the UI specifically for the chosen game!
-    buildSetupScreen(activeCartridge.manifest);
-    if (activeCartridge.manifest.id === 'song_trivia') renderSubPills();
+    // Update the UI dynamically
+    document.getElementById('main-title').innerText = activeCartridge.manifest.title;
+    updatePlatformUI(gameId); // Changes Rules and Stats modals!
+};
 
-    // 3. Hide the main menu, and reveal the setup screen
+window.selectGame = (gameId) => {
+    window.loadCartridge(gameId); // Plug it in!
+    
+    buildSetupScreen(activeCartridge.manifest);
+    if (gameId === 'song_trivia') renderSubPills();
+
     document.getElementById('main-menu-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
 };
@@ -44,19 +48,16 @@ window.shareChallenge = () => activeCartridge.shareChallenge();
 window.evaluateMultiplayerRound = (players) => activeCartridge.evaluateMultiplayerRound(players);
 
 window.onload = () => {
-    const todayStr = new Date().toDateString();
-    if (state.userStats.lastPlayedDate !== todayStr && state.userStats.lastPlayedDate !== null) {
-        state.userStats.playedDailyToday = false;
-        localStorage.setItem('yardbirdStatsV6', JSON.stringify(state.userStats));
-    }
-    populateStats();
+    // Set Main Menu defaults
+    document.getElementById('main-title').innerText = "YARDBIRD'S GAMES";
+    updatePlatformUI('main_menu'); 
+    
     setupDailyButton();
 
-    // Handle Auto-Join via QR Code
     const urlParams = new URLSearchParams(window.location.search);
     const autoRoom = urlParams.get('room');
     if (autoRoom) {
-        document.getElementById('main-menu-screen').classList.add('hidden'); // Hide menu for phones!
+        document.getElementById('main-menu-screen').classList.add('hidden'); 
         handleJoinScreen(); 
         document.getElementById('join-code').value = autoRoom; 
         window.history.replaceState({}, document.title, window.location.pathname);
