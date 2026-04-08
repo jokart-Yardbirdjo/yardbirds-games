@@ -28,7 +28,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; display: flex; justify-content: center; min-height: 100vh; padding: 10px; }
         
-        .container { background: var(--card); padding: 1.5rem; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; border: 1px solid var(--border); width: 100%; max-width: 600px; margin-bottom: 20px; align-self: flex-start; }
+       .container { background: var(--card); padding: 1.5rem; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; border: 1px solid var(--border); width: 100%; flex: 1 1 100%; max-width: 600px; margin-bottom: 20px; align-self: flex-start; }
 
         /* HEADER */
         #game-header { position: relative; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; min-height: 40px; }
@@ -268,7 +268,7 @@
             <button class="btn btn-reset" onclick="cancelLobby()">Cancel</button>
         </div>
 
-        <div id="client-play-screen" class="hidden" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center;">
+        <div id="client-play-screen" class="hidden" style="width: 100%; text-align: center;">
             <div id="client-status" style="font-size: 1.2rem; font-weight: bold; color: var(--brand); margin-bottom: 20px;">ROUND 1</div>
     
             <div id="client-prompt" style="font-size: 2.5rem; font-weight: 900; color: #fff; margin-bottom: 15px;"></div>
@@ -294,7 +294,7 @@
         </div>
               
         
-        <div id="client-end-screen" class="hidden" style="width: 100%; max-width: 400px; margin: 0 auto; text-align: center; padding: 40px 10px;">
+        <div id="client-end-screen" class="hidden" style="width: 100%; text-align: center; padding: 40px 10px;">>
             <h2 style="color:var(--brand); font-size: 2.5rem; margin-bottom: 5px;">Game Over!</h2>
             <div style="font-size: 1.1rem; color: #ccc; margin-bottom: 25px;">Look at the big screen for the final podium!</div>
             
@@ -367,6 +367,7 @@
             
             <div id="feedback-setup" style="margin-top:15px; color:var(--brand); font-weight:bold;"></div>
             <button class="btn btn-reset hidden" id="cancel-setup-btn" onclick="location.reload()" style="margin-top: 20px;">Cancel Multiplayer</button>
+            <button class="btn btn-reset" onclick="location.reload()" style="margin-top: 0; width: 100%;">Back to Main Menu</button>
         </div>
 
         <div id="play-screen" class="hidden">
