@@ -2,7 +2,8 @@
 import { state } from './state.js';
 import { showModal, hideModal, setMode, setSub, setPill, setLevel, renderPlaylist, renderSubPills, populateStats, setupDailyButton } from './ui.js';
 import { handleHostSetup, handleJoinScreen, createRoom, joinRoom, startMultiplayerGame, cancelLobby, cancelActiveGame, submitClientTextGuess, requestClientLifeline } from './multiplayer.js';
-import { startDailyChallenge, startGame, handleStop, forceLifeline, evaluateGuess, resetStats, shareChallenge } from './gameLogic.js';
+//import { startDailyChallenge, startGame, handleStop, forceLifeline, evaluateGuess, resetStats, shareChallenge } from './gameLogic.js';
+import { startDailyChallenge, startGame, handleStop, forceLifeline, evaluateGuess, resetStats, shareChallenge } from './mathLogic.js';
 
 window.showModal = showModal; window.hideModal = hideModal;
 window.setMode = setMode; window.setSub = setSub; window.setPill = setPill; window.setLevel = setLevel;
