@@ -68,15 +68,19 @@ export function setLevel(level, element) {
 export function setupDailyButton() {
     const dailyBtn = document.getElementById('daily-btn-top');
     if(!dailyBtn) return;
-    if (state.userStats.playedDailyToday) {
+    
+    // SAFELY check if the user has played today using the new nested structure
+    const isPlayed = state.userStats.song_trivia ? state.userStats.song_trivia.playedDailyToday : false;
+    
+    if (isPlayed) {
         dailyBtn.innerText = "🌍 TODAY THREE (PLAYED)";
         dailyBtn.style.opacity = "0.5";
         dailyBtn.style.cursor = "not-allowed";
-        dailyBtn.onclick = (e) => { e.preventDefault(); alert("You already crushed today's challenge! Come back tomorrow for a new mix."); };
+        dailyBtn.onclick = (e) => { e.preventDefault(); alert("You already crushed today's challenge! Come back tomorrow."); };
     } else {
         dailyBtn.innerText = "🌍 PLAY TODAY THREE";
         dailyBtn.style.opacity = "1";
-        dailyBtn.onclick = startDailyChallenge;
+        dailyBtn.onclick = () => window.activeCartridge.startDailyChallenge();
     }
 }
 
@@ -161,35 +165,20 @@ export function buildSetupScreen(manifest) {
     if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
 }
 
-// Add to the bottom of ui.js
 export function updatePlatformUI(context) {
     const rulesContent = document.querySelector('#rules-modal .modal-content');
     const statsContent = document.querySelector('#stats-modal .modal-content');
     
     if (context === 'main_menu') {
-        rulesContent.innerHTML = `
-            <h2>Welcome to Yardbird's</h2>
-            <p style="color:#ccc; line-height: 1.6;">Select a game cartridge from the main menu to begin. <br><br><strong>Party Mode:</strong> Want to play with friends? Click the menu icon (☰) in the top left to host a game on your TV and use phones as Kahoot-style controllers!</p>
-            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>
-        `;
-        statsContent.innerHTML = `
-            <h2>Platform Stats</h2>
-            <div class="stat-box" style="margin-bottom:20px;">
-                <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Total Games Played</div>
-                <div class="stat-val">${state.userStats.platformGamesPlayed}</div>
-            </div>
-            <p style="color:#aaa; font-size:0.9rem; text-align:center;">Load a specific game to view its detailed stats and trophies!</p>
-            <button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>
-        `;
+        rulesContent.innerHTML = `<h2>Welcome to Yardbird's</h2><p style="color:#ccc; line-height: 1.6;">Select a game cartridge from the main menu to begin.<br><br><strong>Party Mode:</strong> Want to play with friends? Select a game first, then click the menu icon (☰) in the top left to host a game on your TV and use phones as Kahoot-style controllers!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>`;
+        statsContent.innerHTML = `<h2>Platform Stats</h2><div class="stat-box" style="margin-bottom:20px;"><div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Total Games Played</div><div class="stat-val">${state.userStats.platformGamesPlayed || 0}</div></div><p style="color:#aaa; font-size:0.9rem; text-align:center;">Load a specific game to view its detailed stats and trophies!</p><button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>`;
     } 
     else if (context === 'fast_math') {
-        rulesContent.innerHTML = `
-            <h2>Fast Math Rules</h2>
-            <p style="color:#ccc; line-height: 1.6;">Solve the arithmetic problem shown on the screen as fast as possible. The faster you answer, the more points you get. <br><br>Get 3 in a row correct for a +50 Streak Bonus!</p>
-            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Let's Go!</button>
-        `;
-        // In the future, we will populate this with actual math stats!
-        statsContent.innerHTML = `<h2>Fast Math Stats</h2><p style="color:#aaa; text-align:center;">Math stats tracking coming soon!</p><button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>`;
+        rulesContent.innerHTML = `<h2>Fast Math Rules</h2><p style="color:#ccc; line-height: 1.6;">Solve the arithmetic problem shown on the screen as fast as possible. The faster you answer, the more points you get. <br><br>Get 3 in a row correct for a +50 Streak Bonus!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Let's Go!</button>`;
+        statsContent.innerHTML = `<h2>Fast Math Stats</h2><div class="stat-box" style="margin-bottom:20px;"><div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div><div class="stat-val">${state.userStats.fast_math ? state.userStats.fast_math.gamesPlayed : 0}</div></div><button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>`;
     }
-    // Note: Song Trivia retains its original HTML, which we can inject here later!
+    else if (context === 'song_trivia') {
+        rulesContent.innerHTML = `<h2>How to Play</h2><ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;"><li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li><li><strong>Today Three:</strong> A daily synced challenge.</li><li><strong>The Lifeline:</strong> Multiple Choice options drop at 10s.</li></ul><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it! Let's Play</button>`;
+        statsContent.innerHTML = `<h2>Trivia Stats</h2><div class="stat-box" style="margin-bottom:20px;"><div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div><div class="stat-val">${state.userStats.song_trivia ? state.userStats.song_trivia.gamesPlayed : 0}</div></div><button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>`;
+    }
 }
