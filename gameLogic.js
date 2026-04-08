@@ -444,6 +444,19 @@ function nextTrack() {
     if(state.guessTimerId) clearInterval(state.guessTimerId);
     
     state.isProcessing = false; state.hasUsedLifeline = false;
+
+    // --- NEW: PRE-GENERATE MC OPTIONS FOR THIS ROUND ---
+    const correctStr = getMCLabel(state.songs[state.curIdx]);
+    let wrongOptionsPool = [];
+    state.globalPool.forEach(s => {
+        let str = getMCLabel(s);
+        if (str !== correctStr && str !== "Unknown Movie" && str !== "Unknown") wrongOptionsPool.push(str);
+    });
+    wrongOptionsPool = [...new Set(wrongOptionsPool)].sort(() => 0.5 - Math.random());
+    let options = [{ str: correctStr, correct: true }];
+    wrongOptionsPool.slice(0, 3).forEach(str => options.push({ str: str, correct: false }));
+    state.currentMCOptions = options.sort(() => 0.5 - Math.random());
+    // --------------------------------------------------
     
     const pIdx = state.curIdx % state.numPlayers;
     const currentColor = colors[pIdx % colors.length]; 
@@ -456,7 +469,12 @@ function nextTrack() {
         tag.innerText = `ROUND ${state.curIdx + 1} / ${state.maxRounds}`;
         tag.style.color = "var(--highlight)"; tag.style.borderColor = "var(--highlight)";
         db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
-        db.ref(`rooms/${state.roomCode}/currentMC`).remove(); // WIPE CLIENT UI CLEAN FOR NEW ROUND!
+        db.ref(`rooms/${state.roomCode}/currentMC`).remove(); // Hide from phones
+
+        // Secretly save the options in the background for individual phones to grab!
+        let fbOptions = state.currentMCOptions.map(opt => ({ str: opt.str, isCorrect: opt.correct }));
+        db.ref(`rooms/${state.roomCode}/roundMC`).set(fbOptions);
+
     } else {
         updateLeaderboard(pIdx); 
         document.documentElement.style.setProperty('--active-vis', currentColor);
