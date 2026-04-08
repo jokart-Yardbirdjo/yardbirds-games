@@ -150,12 +150,13 @@ export function buildSetupScreen(manifest) {
     state.gameState.level = manifest.levels[0].id;
     
     // 4. Clean up UI based on Cartridge requirements
-    // If it's a Fast Math game, hide the Era/Genre pills
-    if (manifest.id === 'fast_math') {
-        document.getElementById('sub-selection-area').classList.add('hidden');
-        document.getElementById('players-rounds-area').classList.add('hidden'); // Solo only for now
-    } else {
-        document.getElementById('sub-selection-area').classList.remove('hidden');
-        document.getElementById('players-rounds-area').classList.remove('hidden');
-    }
+    const isSongTrivia = manifest.id === 'song_trivia';
+    
+    // Hide the Era/Genre and Player/Rounds selection if not Song Trivia
+    document.getElementById('sub-selection-area').classList.toggle('hidden', !isSongTrivia);
+    document.getElementById('players-rounds-area').classList.toggle('hidden', !isSongTrivia);
+
+    // Hide the "Play Today Three" button and its subtitle if not Song Trivia
+    const dailyContainer = document.getElementById('daily-btn-top').parentElement;
+    if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
 }
