@@ -160,3 +160,36 @@ export function buildSetupScreen(manifest) {
     const dailyContainer = document.getElementById('daily-btn-top').parentElement;
     if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
 }
+
+// Add to the bottom of ui.js
+export function updatePlatformUI(context) {
+    const rulesContent = document.querySelector('#rules-modal .modal-content');
+    const statsContent = document.querySelector('#stats-modal .modal-content');
+    
+    if (context === 'main_menu') {
+        rulesContent.innerHTML = `
+            <h2>Welcome to Yardbird's</h2>
+            <p style="color:#ccc; line-height: 1.6;">Select a game cartridge from the main menu to begin. <br><br><strong>Party Mode:</strong> Want to play with friends? Click the menu icon (☰) in the top left to host a game on your TV and use phones as Kahoot-style controllers!</p>
+            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>
+        `;
+        statsContent.innerHTML = `
+            <h2>Platform Stats</h2>
+            <div class="stat-box" style="margin-bottom:20px;">
+                <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Total Games Played</div>
+                <div class="stat-val">${state.userStats.platformGamesPlayed}</div>
+            </div>
+            <p style="color:#aaa; font-size:0.9rem; text-align:center;">Load a specific game to view its detailed stats and trophies!</p>
+            <button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>
+        `;
+    } 
+    else if (context === 'fast_math') {
+        rulesContent.innerHTML = `
+            <h2>Fast Math Rules</h2>
+            <p style="color:#ccc; line-height: 1.6;">Solve the arithmetic problem shown on the screen as fast as possible. The faster you answer, the more points you get. <br><br>Get 3 in a row correct for a +50 Streak Bonus!</p>
+            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Let's Go!</button>
+        `;
+        // In the future, we will populate this with actual math stats!
+        statsContent.innerHTML = `<h2>Fast Math Stats</h2><p style="color:#aaa; text-align:center;">Math stats tracking coming soon!</p><button class="btn btn-main" onclick="hideModal('stats-modal')">Close</button>`;
+    }
+    // Note: Song Trivia retains its original HTML, which we can inject here later!
+}
