@@ -232,4 +232,9 @@ function endGameSequence() {
         document.getElementById('winner-text').innerText = `Game Over! Final Score: ${state.rawScores[0]}`;
         document.getElementById('final-grid').innerHTML = "";
     }
+   
+    // ADD THESE 3 LINES TO THE VERY BOTTOM:
+    state.userStats.fast_math.gamesPlayed++;
+    state.userStats.platformGamesPlayed++;
+    localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
 }
