@@ -144,6 +144,18 @@ export async function joinRoom() {
         if(snap.exists() && document.getElementById('client-timer-display')) document.getElementById('client-timer-display').innerText = snap.val();
     });
 
+    // --- PASTE THIS NEW BLOCK RIGHT HERE ---
+    db.ref(`rooms/${state.roomCode}/currentPrompt`).on('value', snap => {
+        const promptDiv = document.getElementById('client-prompt');
+        if (snap.exists() && promptDiv) {
+            promptDiv.innerText = snap.val();
+            promptDiv.classList.remove('hidden');
+        } else if (promptDiv) {
+            promptDiv.classList.add('hidden');
+        }
+    });
+    // ---------------------------------------
+
     db.ref(`rooms/${state.roomCode}/currentRound`).on('value', snap => {
         if(snap.exists() && document.getElementById('client-status')) document.getElementById('client-status').innerText = `ROUND ${snap.val()}`;
     });
