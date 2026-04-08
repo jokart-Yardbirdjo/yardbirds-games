@@ -34,11 +34,20 @@ export const state = {
     hasUsedLifeline: false, 
     scoreLock: 0,
 
-    userStats: JSON.parse(localStorage.getItem('yardbirdStatsV6')) || { 
-        gamesPlayed: 0, totalGuesses: 0, correctGuesses: 0, hsText: 0, hsMC: 0, sniperHits: 0, 
-        lastPlayedDate: null, currentStreak: 0, playedDailyToday: false, 
-        modesPlayed: { genre: false, artist: false, movie: false }, 
-        trophies: { perf: false, mara: false, snip: false, streak: false, expl: false } 
+    // Replaces the old userStats object in state.js
+    activeCartridgeId: null, // Keeps track of what game is currently plugged in
+    
+    userStats: JSON.parse(localStorage.getItem('yardbirdPlatformStats')) || { 
+        platformGamesPlayed: 0,
+        song_trivia: JSON.parse(localStorage.getItem('yardbirdStatsV6')) || {
+            gamesPlayed: 0, totalGuesses: 0, correctGuesses: 0, hsText: 0, hsMC: 0, sniperHits: 0, 
+            lastPlayedDate: null, currentStreak: 0, playedDailyToday: false, 
+            modesPlayed: { genre: false, artist: false, movie: false }, 
+            trophies: { perf: false, mara: false, snip: false, streak: false, expl: false } 
+        },
+        fast_math: {
+            gamesPlayed: 0, hsText: 0, correctGuesses: 0, totalGuesses: 0
+        }
     },
     globalHighScore: localStorage.getItem('yardbirdHighScore') || 0
 };
