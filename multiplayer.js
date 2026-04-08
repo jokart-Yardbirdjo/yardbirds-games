@@ -4,6 +4,13 @@ import { state, colors } from './state.js';
 import { hideModal } from './ui.js';
 
 export function handleHostSetup() {
+    // NEW: Don't let them host until they pick a game!
+    if (!state.activeCartridgeId) {
+        alert("Please select a Game Cartridge from the Main Menu first!");
+        hideModal('multiplayer-modal');
+        return;
+    }
+
     hideModal('multiplayer-modal');
     document.getElementById('setup-screen').classList.remove('hidden');
     document.getElementById('start-btn-top').innerText = "▶ CREATE MULTIPLAYER ROOM";
