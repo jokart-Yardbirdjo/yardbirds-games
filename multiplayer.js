@@ -153,7 +153,15 @@ export async function joinRoom() {
     db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}/status`).on('value', snap => {
         if (snap.val() === 'guessing') {
             document.getElementById('client-locked-screen').classList.add('hidden');
-            document.getElementById('client-mc-inputs').classList.remove('hidden');
+            
+            // If the host pushed multiple choice, show MC. Otherwise, show text boxes!
+            db.ref(`rooms/${state.roomCode}/currentMC`).once('value', mcSnap => {
+                if (mcSnap.exists()) {
+                    document.getElementById('client-mc-inputs').classList.remove('hidden');
+                } else {
+                    document.getElementById('client-text-inputs').classList.remove('hidden');
+                }
+            });
         }
     });
 
