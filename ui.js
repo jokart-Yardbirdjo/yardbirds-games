@@ -109,3 +109,50 @@ export function renderPlaylist(platform) {
     });
     document.getElementById('playlist-list').innerHTML = playlistHTML;
 }
+
+// Add this to the bottom of ui.js
+export function buildSetupScreen(manifest) {
+    // 1. Build the Mode Cards
+    const modeGroup = document.getElementById('mode-group');
+    modeGroup.innerHTML = ''; // Clear old cards
+    
+    manifest.modes.forEach((mode, index) => {
+        const card = document.createElement('div');
+        card.className = `select-card ${index === 0 ? 'active' : ''}`;
+        card.onclick = () => window.setMode(mode.id, card); // We use window because of the HTML onclick
+        card.innerHTML = `
+            <div class="card-title">${mode.title}</div>
+            <div class="card-desc">${mode.desc}</div>
+        `;
+        modeGroup.appendChild(card);
+    });
+
+    // 2. Build the Difficulty Cards
+    const levelGroup = document.getElementById('level-group');
+    levelGroup.innerHTML = '';
+    
+    manifest.levels.forEach((lvl, index) => {
+        const card = document.createElement('div');
+        card.className = `select-card ${index === 0 ? 'active' : ''}`;
+        card.onclick = () => window.setLevel(lvl.id, card);
+        card.innerHTML = `
+            <div class="card-title">${lvl.title}</div>
+            <div class="card-desc">${lvl.desc}</div>
+        `;
+        levelGroup.appendChild(card);
+    });
+
+    // 3. Set Default State Values
+    state.gameState.mode = manifest.modes[0].id;
+    state.gameState.level = manifest.levels[0].id;
+    
+    // 4. Clean up UI based on Cartridge requirements
+    // If it's a Fast Math game, hide the Era/Genre pills
+    if (manifest.id === 'fast_math') {
+        document.getElementById('sub-selection-area').classList.add('hidden');
+        document.getElementById('players-rounds-area').classList.add('hidden'); // Solo only for now
+    } else {
+        document.getElementById('sub-selection-area').classList.remove('hidden');
+        document.getElementById('players-rounds-area').classList.remove('hidden');
+    }
+}
