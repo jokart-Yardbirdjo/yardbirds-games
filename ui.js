@@ -112,6 +112,9 @@ export function renderPlaylist(platform) {
 
 // Add this to the bottom of ui.js
 export function buildSetupScreen(manifest) {
+    // --- ADD THIS LINE ---
+    document.getElementById('main-title').innerText = manifest.title;
+    
     // 1. Build the Mode Cards
     const modeGroup = document.getElementById('mode-group');
     modeGroup.innerHTML = ''; // Clear old cards
