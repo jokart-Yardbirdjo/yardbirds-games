@@ -114,6 +114,10 @@ export function buildSetupScreen(manifest) {
     levelGroup.innerHTML = '';
     manifest.levels.forEach((lvl, index) => {
         const card = document.createElement('div');
+        
+        // NEW FIX: Assign the dynamic ID so setMode() can find it!
+        card.id = `lvl-${lvl.id}`; 
+        
         card.className = `select-card ${index === 0 ? 'active' : ''}`;
         card.onclick = () => window.setLevel(lvl.id, card);
         card.innerHTML = `<div class="card-title">${lvl.title}</div><div class="card-desc">${lvl.desc}</div>`;
