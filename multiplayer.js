@@ -28,13 +28,9 @@ export function handleJoinScreen() {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('join-screen').classList.remove('hidden');
     
-    // 1. Hide the extra icons to keep the controller clean
-    const menuBtn = document.getElementById('menu-btn'); if(menuBtn) menuBtn.classList.add('hidden');
-    const infoBtn = document.getElementById('info-btn'); if(infoBtn) infoBtn.classList.add('hidden');
-    const statsBtn = document.getElementById('stats-btn'); if(statsBtn) statsBtn.classList.add('hidden');
-    
-    // 2. Center the main title perfectly
-    const header = document.getElementById('game-header'); if(header) header.classList.add('home-screen');
+    // THE NUCLEAR FIX: Tag the entire body as a client. 
+    // CSS will now physically block the buttons from appearing.
+    document.body.classList.add('client-mode');
 
     state.isMultiplayer = true;
     state.isHost = false;
