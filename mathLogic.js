@@ -189,17 +189,7 @@ export function evaluateMultiplayerRound(players) {
     fbHTML += `</div>`;
     document.getElementById('feedback').innerHTML = fbHTML; 
 
-    / -------------------------------------------------------------
-    // NEW FIX 2: Remove this block to hide totals during the rounds!
-    /*
-    document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
-        <div class="score-pill" style="border-color:${colors[i % colors.length]};">
-            <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
-            <div class="p-pts" style="color:#fff">${s}</div>
-            <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
-        </div>`).join('');
-    */
-    // -------------------------------------------------------------
+    // Note: The scoreboard drawing block was cleanly removed from here!
 
     state.curIdx++; 
     setTimeout(nextRound, 4000); 
