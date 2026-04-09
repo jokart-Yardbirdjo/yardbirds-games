@@ -758,9 +758,9 @@ export function evaluateMultiplayerRound(players) {
             state.streaks[index]++;
             if (state.streaks[index] % 3 === 0) { roundPts += 50; } 
             state.rawScores[index] += roundPts;
-            fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.name}: +${roundPts}</div>`;
+            fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.nickname || p.name || "Player"}: +${roundPts}</div>`;
         } else {
-            fbHTML += `<div style="color:var(--fail); font-size:1.1rem;">❌ ${p.name}: 0</div>`;
+            fbHTML += `<div style="color:var(--fail); font-size:1.1rem;">❌ ${p.nickname || p.name || "Player"}: 0</div>`;
             state.streaks[index] = 0;
         }
     });
@@ -829,7 +829,7 @@ function endGameSequence() {
                 let finalResults = [];
                 pIds.forEach((pid, index) => {
                     const normScore = normalizedScores[index] || 0;
-                    finalResults.push({ name: players[pid].name, score: normScore, id: pid });
+                    finalResults.push({ name: players[pid].nickname || players[pid].name || "Player", score: normScore, id: pid });
                     db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: normScore });
                 });
                 
