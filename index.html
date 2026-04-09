@@ -348,7 +348,7 @@
             
             <h1 id="main-title">YARDBIRD'S SONG TRIVIA</h1>
             <button onclick="showModal('rules-modal')" class="header-btn" id="info-btn">i</button>
-            <button onclick="showModal('stats-modal')" class="header-btn" id="stats-btn">📊</button>
+            <button onclick="openStatsLocker()" class="header-btn" id="stats-btn">📊</button>
         </div>
 
         <div id="join-screen" class="hidden">
@@ -543,15 +543,7 @@
     </div>
 </div>
 
-<div id="stats-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center;">
-        <div style="background:var(--card); padding:2rem; border-radius:16px; border:1px solid var(--brand); width:90%; max-width:400px; text-align:center;">
-            <h2 style="color:var(--brand); margin-top:0;">LIFETIME STATS</h2>
-            <div id="stats-content" style="color:#fff; font-size:1.1rem; line-height:1.8; text-align:left; margin:20px 0;">
-                </div>
-            <button class="btn" onclick="document.getElementById('stats-modal').classList.add('hidden')" style="width:100%;">CLOSE</button>
-        </div>
-</div>
-    
+   
 <script type="module" src="app.js"></script>
 
 <script>
