@@ -84,24 +84,7 @@ export function setupDailyButton() {
     }
 }
 
-export function populateStats() {
-    if(!document.getElementById('stat-games')) return;
-    const st = state.userStats.song_trivia || {}; // Use the nested structure!
-    
-    document.getElementById('stat-games').innerText = state.userStats.platformGamesPlayed || 0;
-    let acc = st.totalGuesses > 0 ? Math.round((st.correctGuesses / st.totalGuesses) * 100) : 0;
-    document.getElementById('stat-acc').innerText = `${acc}%`;
-    document.getElementById('stat-hs-text').innerText = st.hsText || 0;
-    document.getElementById('stat-snip').innerText = st.sniperHits || 0;
-    
-    if(st.trophies) {
-        if(st.trophies.perf && document.getElementById('trophy-perf')) document.getElementById('trophy-perf').classList.add('unlocked');
-        if(st.trophies.mara && document.getElementById('trophy-mara')) document.getElementById('trophy-mara').classList.add('unlocked');
-        if(st.trophies.snip && document.getElementById('trophy-snip')) document.getElementById('trophy-snip').classList.add('unlocked');
-        if(st.trophies.streak && document.getElementById('trophy-streak')) document.getElementById('trophy-streak').classList.add('unlocked');
-        if(st.trophies.expl && document.getElementById('trophy-expl')) document.getElementById('trophy-expl').classList.add('unlocked');
-    }
-}
+export function populateStats() {}
 
 export function renderPlaylist(platform) {
     document.getElementById('playlist-list-container').style.display = 'block';
@@ -166,17 +149,127 @@ export function buildSetupScreen(manifest) {
 }
 
 // --- NEW SMART LOCKER ROOM LOGIC ---
+// Keep this empty so gameLogic.js doesn't crash if it tries to import it!
+export function populateStats() {}
+
 export function openStatsLocker() {
-    // Sync the HTML with the latest data in state
-    populateStats(); 
+    const rawData = localStorage.getItem('yardbirdPlatformStats');
+    const stats = rawData ? JSON.parse(rawData) : {};
     
-    // Show the modal
+    // Grab individual game stats (with fallbacks if they haven't been played yet)
+    const st = stats.song_trivia || {};
+    const fm = stats.fast_math || {};
+    
+    // Figure out where we are!
+    const context = window.activeCartridge ? window.activeCartridge.manifest.id : 'main_menu';
+    const modalContent = document.querySelector('#stats-modal .modal-content');
+
+    if (context === 'main_menu') {
+        // --- MAIN MENU: Overview of all games ---
+        const stGames = st.gamesPlayed || 0;
+        const fmGames = fm.gamesPlayed || 0;
+        const totalGames = stats.platformGamesPlayed || (stGames + fmGames);
+        
+        modalContent.innerHTML = `
+            <h2 style="color:var(--brand); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:15px;">Platform Stats</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Song Trivia</div>
+                    <div class="stat-val" style="color:var(--p2)">${stGames} <span style="font-size:0.8rem; color:#666;">plays</span></div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Fast Math</div>
+                    <div class="stat-val" style="color:var(--p1)">${fmGames} <span style="font-size:0.8rem; color:#666;">plays</span></div>
+                </div>
+            </div>
+            <div style="text-align:center; color:#888; margin: 15px 0;">Total Games Across Platform: ${totalGames}</div>
+            <button class="btn btn-main" onclick="hideModal('stats-modal')" style="width: 100%; margin-top: 15px;">Close</button>
+        `;
+
+    } else if (context === 'fast_math') {
+        // --- FAST MATH: Speed stats ---
+        modalContent.innerHTML = `
+            <h2 style="color:var(--brand); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:15px;">Fast Math Locker</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div>
+                    <div class="stat-val">${fm.gamesPlayed || 0}</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">High Score</div>
+                    <div class="stat-val" style="color:var(--p1)">${fm.highScore || fm.hsText || 0}</div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">Close</button>
+                <button class="btn btn-reset" onclick="if(window.activeCartridge && window.activeCartridge.resetStats) { window.activeCartridge.resetStats(); hideModal('stats-modal'); }" style="margin-top: 0; padding: 16px;">Reset</button>
+            </div>
+        `;
+
+    } else if (context === 'song_trivia') {
+        // --- SONG TRIVIA: The full Trophy Cabinet ---
+        let acc = st.totalGuesses > 0 ? Math.round((st.correctGuesses / st.totalGuesses) * 100) : 0;
+        const tr = st.trophies || {};
+        
+        modalContent.innerHTML = `
+            <h2 style="color:var(--brand); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:15px;">Trivia Locker Room</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div>
+                    <div class="stat-val">${st.gamesPlayed || 0}</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Accuracy</div>
+                    <div class="stat-val" style="color:var(--brand)">${acc}%</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">High Score</div>
+                    <div class="stat-val" style="color:var(--p1)">${st.hsText || 0}</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Sniper Hits</div>
+                    <div class="stat-val" style="color:var(--p3)">${st.sniperHits || 0}</div>
+                </div>
+            </div>
+
+            <h3 style="color:#fff; font-size:1rem; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px;">Trophy Cabinet</h3>
+            
+            <div class="trophy-row ${tr.perf ? 'unlocked' : ''}">
+                <div class="trophy-icon">🏆</div>
+                <div class="trophy-text"><h4>The Perfectionist</h4><p>Score higher than 900/1000 points.</p></div>
+            </div>
+            <div class="trophy-row ${tr.mara ? 'unlocked' : ''}">
+                <div class="trophy-icon">🏃</div>
+                <div class="trophy-text"><h4>The Marathoner</h4><p>Complete a grueling 20-Round game.</p></div>
+            </div>
+            <div class="trophy-row ${tr.snip ? 'unlocked' : ''}">
+                <div class="trophy-icon">🎯</div>
+                <div class="trophy-text"><h4>The Sniper</h4><p>Guess 10 songs correctly in under 3 seconds.</p></div>
+            </div>
+            <div class="trophy-row ${tr.streak ? 'unlocked' : ''}">
+                <div class="trophy-icon">🔥</div>
+                <div class="trophy-text"><h4>The Daily Devotee</h4><p>Play 5 days in a row.</p></div>
+            </div>
+            <div class="trophy-row ${tr.expl ? 'unlocked' : ''}">
+                <div class="trophy-icon">🗺️</div>
+                <div class="trophy-text"><h4>The Explorer</h4><p>Play all 3 game modes.</p></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">Close</button>
+                <button class="btn btn-reset" onclick="if(window.activeCartridge && window.activeCartridge.resetStats) { window.activeCartridge.resetStats(); hideModal('stats-modal'); }" style="margin-top: 0; padding: 16px;">Reset</button>
+            </div>
+        `;
+    }
+
+    // Finally, show the modal
     if (window.showModal) {
         window.showModal('stats-modal');
     } else {
         document.getElementById('stats-modal').classList.remove('hidden');
     }
 }
+
 window.openStatsLocker = openStatsLocker;
 
 
