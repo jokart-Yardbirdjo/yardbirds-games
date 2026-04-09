@@ -292,7 +292,7 @@ export async function executeFetchLogic() {
                     seenTracks.add(cleanTitle); return true;
                 });
             }
-        }
+        } 
         else {
             let apiSearchTerm = "";
             if (state.gameState.mode === 'genre') {
@@ -533,7 +533,7 @@ function nextTrack() {
 function startRoundClock() {
     document.getElementById('visualizer').classList.remove('hidden'); document.getElementById('visualizer').classList.add('active');
     state.timeLeft = state.timeLimit; state.startTime = Date.now();
-    state.scoreLock = 0; state.isGracePeriod = false;
+    state.scoreLock = 0; state.isGracePeriod = false; state.forcedEarly = false;
     document.getElementById('timer').innerText = state.timeLeft; document.getElementById('timer').style.color = 'var(--highlight)';
 
     state.timerId = setInterval(() => {
@@ -572,6 +572,7 @@ function startRoundClock() {
 
 export function forceLifeline() {
     if (state.timeLeft > 10 && !state.hasUsedLifeline) {
+        state.forcedEarly = true; // Track that they forced it early!
         state.timeLeft = 10; document.getElementById('timer').innerText = state.timeLeft; triggerLifeline();
     }
 }
@@ -659,7 +660,15 @@ export function evaluateGuess(isCorrectMC = null) {
     if (state.hasUsedLifeline) document.querySelectorAll('.mc-btn').forEach(b => b.disabled = true);
 
     const pIdx = state.curIdx % state.numPlayers;
-    let roundPts = state.hasUsedLifeline ? Math.max(0, state.timeLeft) : state.scoreLock;
+    
+    // RULE 2 & 3: Flat 5 points if forced early, otherwise time remaining
+    let roundPts = 0;
+    if (state.hasUsedLifeline) {
+        roundPts = state.forcedEarly ? 5 : Math.max(0, state.timeLeft);
+    } else {
+        roundPts = state.scoreLock;
+    }
+
     let correct = false; let artOk = false, sonOk = false, movOk = false;
 
     const realA = state.songs[state.curIdx].artistName;
@@ -703,9 +712,14 @@ export function evaluateGuess(isCorrectMC = null) {
     }
 
     if (correct) {
-        state.streaks[pIdx]++;
+        // RULE 4: Pure streak bonus only without lifeline
+        if (!state.hasUsedLifeline) {
+            state.streaks[pIdx]++;
+            if (state.streaks[pIdx] % 3 === 0) { roundPts += 50; fbHTML += `<div style="color:var(--p4); font-size:0.85rem; margin-top:5px;">+50 PURE STREAK BONUS</div>`; }
+        } else {
+            state.streaks[pIdx] = 0; // Using MC breaks the streak!
+        }
         if(fbHTML.includes("DOUBLE") || fbHTML.includes("CORRECT")) { sfxCheer.currentTime=0; sfxCheer.play().catch(e=>{}); }
-        if (state.streaks[pIdx] % 3 === 0) { roundPts += 50; fbHTML += `<div style="color:var(--p4); font-size:0.85rem; margin-top:5px;">+50 STREAK BONUS</div>`; }
     } else {
         sfxBuzzer.currentTime = 0; sfxBuzzer.play().catch(e=>{});
         state.streaks[pIdx] = 0; roundPts = 0; 
@@ -745,7 +759,11 @@ export function evaluateMultiplayerRound(players) {
         let basePts = (p.guess && p.guess.phase === 'grace') ? 5 : (p.guess ? p.guess.time : 0);
 
         if (p.guess && p.guess.isMC) {
-            correct = p.guess.correct; if (correct) roundPts = basePts; 
+            correct = p.guess.correct; 
+            if (correct) {
+                // RULE 2 & 3: Check if the phone requested the lifeline early!
+                roundPts = p.guess.time > 10 ? 5 : basePts; 
+            }
         } else {
             let artG = p.guess ? p.guess.artist || "" : ""; let sonG = p.guess ? p.guess.song || "" : ""; let movG = p.guess ? p.guess.movie || "" : "";
             if (state.gameState.mode === 'genre') {
@@ -760,8 +778,13 @@ export function evaluateMultiplayerRound(players) {
         }
 
         if (correct) {
-            state.streaks[index]++;
-            if (state.streaks[index] % 3 === 0) { roundPts += 50; } 
+            // RULE 4: Pure streak bonus only without lifeline
+            if (!(p.guess && p.guess.isMC)) {
+                state.streaks[index]++;
+                if (state.streaks[index] % 3 === 0) { roundPts += 50; fbHTML += `<div style="color:var(--p4); font-size:0.85rem; margin-top:5px;">+50 PURE STREAK BONUS</div>`; }
+            } else {
+                state.streaks[index] = 0; // Using MC breaks the streak!
+            }
             state.rawScores[index] += roundPts;
             fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.nickname || p.name || "Player"}: +${roundPts}</div>`;
         } else {
