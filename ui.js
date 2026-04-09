@@ -165,6 +165,33 @@ export function buildSetupScreen(manifest) {
     if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
 }
 
+export function openStatsModal() {
+    const rawData = localStorage.getItem('yardbirdPlatformStats');
+    const contentDiv = document.getElementById('stats-content');
+    
+    if (!rawData) {
+        contentDiv.innerHTML = "<div style='text-align:center; color:#888;'>No games played yet! Get out there and set some high scores.</div>";
+    } else {
+        const stats = JSON.parse(rawData);
+        const st = stats.song_trivia || {}; // Fallback in case it's empty
+        
+        contentDiv.innerHTML = `
+            <div>🎮 <b>Platform Games:</b> ${stats.platformGamesPlayed || 0}</div>
+            <hr style="border-color:#333; margin:10px 0;">
+            <div style="color:var(--brand); font-weight:bold;">SONG TRIVIA</div>
+            <div>🏆 <b>High Score:</b> ${st.hsText || 0} Pts</div>
+            <div>🎯 <b>Sniper Hits:</b> ${st.sniperHits || 0}</div>
+            <div>🔥 <b>Current Streak:</b> ${st.currentStreak || 0} Days</div>
+            <div>🧠 <b>Accuracy:</b> ${st.totalGuesses > 0 ? Math.round((st.correctGuesses / st.totalGuesses) * 100) : 0}%</div>
+        `;
+    }
+    
+    document.getElementById('stats-modal').classList.remove('hidden');
+}
+
+// Make sure to expose it to the HTML window!
+window.openStatsModal = openStatsModal;
+
 export function updatePlatformUI(context) {
     // 1. Toggle the hamburger menu based on where we are
     const menuBtn = document.getElementById('menu-btn');
