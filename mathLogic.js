@@ -202,7 +202,6 @@ function endGameSequence() {
     document.getElementById('play-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
     document.querySelector('.playlist-box').style.display = 'none'; 
-    // --- ADD THIS NEW LINE ---
     document.getElementById('final-subtitle').innerText = "Speed & Accuracy Scored";
     
     if (state.isMultiplayer && state.isHost) {
@@ -235,8 +234,20 @@ function endGameSequence() {
         document.getElementById('final-grid').innerHTML = "";
     }
    
-    // ADD THESE 3 LINES TO THE VERY BOTTOM:
+    // --- STATS SAVING LOGIC ---
+    // Ensure the fast_math object is safely initialized
+    state.userStats.fast_math = state.userStats.fast_math || { gamesPlayed: 0, highScore: 0 };
+    
+    // Check if we hit a new high score!
+    const currentScore = state.rawScores[0] || 0;
+    if (currentScore > (state.userStats.fast_math.highScore || 0)) {
+        state.userStats.fast_math.highScore = currentScore;
+    }
+
+    // Increment games played
     state.userStats.fast_math.gamesPlayed++;
     state.userStats.platformGamesPlayed++;
+    
+    // Save to browser
     localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
 }
