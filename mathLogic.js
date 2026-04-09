@@ -202,6 +202,8 @@ function endGameSequence() {
     document.getElementById('play-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
     document.querySelector('.playlist-box').style.display = 'none'; 
+    // --- ADD THIS NEW LINE ---
+    document.getElementById('final-subtitle').innerText = "Speed & Accuracy Scored";
     
     if (state.isMultiplayer && state.isHost) {
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
