@@ -8,9 +8,9 @@ export const manifest = {
     subtitle: "Quick-fire arithmetic battles",
     modes: [ 
         { id: "addition", title: "➕ Addition", desc: "Classic 2-digit sums." },
+        { id: "subtraction", title: "➖ Subtraction", desc: "Quick mental differences." },
         { id: "multiplication", title: "✖️ Multiplication", desc: "Fast-paced times tables." },
-        // NEW FEATURE: Add the Subtraction mode!
-        { id: "subtraction", title: "➖ Subtraction", desc: "Quick mental differences." }
+        { id: "division", title: "➗ Division", desc: "Clean mental math quotients." }
     ],
     levels: [ 
         { id: "easy", title: "🟢 Easy", desc: "20s. Incorrect answer disappears at 10s." },
@@ -25,6 +25,9 @@ export function handleStop() {}
 export function forceLifeline() {}
 export function shareChallenge() {}
 
+// mathLogic.js
+// Replace your entire generateMathProblem() function:
+
 function generateMathProblem() {
     let num1, num2, target, operatorStr;
 
@@ -35,11 +38,16 @@ function generateMathProblem() {
         target = num1 * num2;
         operatorStr = 'x';
     } else if (state.gameState.mode === 'subtraction') {
-        // NEW FIX: Ensure num1 is larger so we don't get negative targets
         num1 = Math.floor(Math.random() * 80) + 20; 
         num2 = Math.floor(Math.random() * (num1 - 5)) + 1; 
         target = num1 - num2;
         operatorStr = '-';
+    } else if (state.gameState.mode === 'division') {
+        // NEW FIX: Ensure clean division! Target and divisor are whole numbers.
+        target = Math.floor(Math.random() * 11) + 2; // The answer (2 through 12)
+        num2 = Math.floor(Math.random() * 11) + 2;   // The divisor (2 through 12)
+        num1 = target * num2;                        // The starting big number
+        operatorStr = '÷';
     } else { // Default to Addition
         num1 = Math.floor(Math.random() * 90) + 10; 
         num2 = Math.floor(Math.random() * 90) + 10;
@@ -60,6 +68,12 @@ function generateMathProblem() {
             w1 = Math.floor(Math.random() * 80) + 20;
             w2 = Math.floor(Math.random() * (w1 - 5)) + 1;
             if (w1 - w2 !== target) options.push({ text: `${w1} ${operatorStr} ${w2}`, isCorrect: false });
+        } else if (state.gameState.mode === 'division') {
+            // Generate clean wrong division equations
+            let wTarget = Math.floor(Math.random() * 11) + 2;
+            w2 = Math.floor(Math.random() * 11) + 2;
+            w1 = wTarget * w2;
+            if (wTarget !== target) options.push({ text: `${w1} ${operatorStr} ${w2}`, isCorrect: false });
         } else {
             w1 = Math.floor(Math.random() * 90) + 10;
             w2 = Math.floor(Math.random() * 90) + 10;
