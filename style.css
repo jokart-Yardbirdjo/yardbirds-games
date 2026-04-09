@@ -117,6 +117,22 @@
         }
         input[type="text"]::placeholder { color: #666; font-size: 0.85rem;}
 
+        /* =========================================
+           📱 NUCLEAR CLIENT MODE OVERRIDE
+           ========================================= */
+        body.client-mode .header-btn { 
+            display: none !important; 
+        }
+        body.client-mode #game-header {
+            justify-content: center !important;
+        }
+        body.client-mode #main-title {
+            padding: 0 !important;
+            font-size: 1.9rem !important;
+            letter-spacing: 5px !important;
+            text-align: center !important;
+        }    
+
         /* PLAY SCREEN */
         .player-tag { font-size: 1.2rem; font-weight: 800; padding: 12px; border-radius: 12px; margin-bottom: 10px; text-transform: uppercase; border: 2px solid transparent; transition: all 0.4s ease; }
         .timer-display { font-size: 3.5rem; font-weight: 900; margin: 5px 0; font-family: 'Courier New', monospace; transition: color 0.3s; color: var(--highlight); }
