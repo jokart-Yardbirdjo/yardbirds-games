@@ -74,10 +74,15 @@ export async function startDailyChallenge() {
 
 export function startGame() {
     state.isDailyMode = false;
-    state.numPlayers = state.gameState.players;
+    
+    // -------------------------------------------------------------
+    // NEW FIX 3: Respect the multiplayer lobby count, and don't 
+    // multiply the maxRounds if everyone is playing at the same time!
+    state.numPlayers = state.isMultiplayer ? state.numPlayers : state.gameState.players;
     state.timeLimit = state.gameState.level === 'hard' ? 10 : 30; 
     state.roundsPerPlayer = state.gameState.rounds;
-    state.maxRounds = state.roundsPerPlayer * state.numPlayers;
+    state.maxRounds = state.isMultiplayer ? state.roundsPerPlayer : (state.roundsPerPlayer * state.numPlayers);
+    // -------------------------------------------------------------
     
     document.getElementById('start-btn-top').style.display = 'none';
     document.getElementById('daily-btn-top').style.display = 'none';
