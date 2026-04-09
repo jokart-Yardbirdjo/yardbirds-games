@@ -812,6 +812,9 @@ function endGameSequence() {
     document.getElementById('final-screen').classList.remove('hidden');
     if(state.isDailyMode) { document.getElementById('main-title').innerText = "🌍 TODAY THREE CHALLENGE"; }
     document.getElementById('main-title').style.color = '#ffffff'; 
+
+    // --- ADD THIS NEW LINE ---
+    document.getElementById('final-subtitle').innerText = "Scores Normalized to 1000";
     
     updateLeaderboard(-1); shootConfetti(); 
     
