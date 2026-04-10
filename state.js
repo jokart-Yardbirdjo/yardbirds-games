@@ -34,8 +34,7 @@ export const state = {
     hasUsedLifeline: false, 
     scoreLock: 0,
 
-    // Replaces the old userStats object in state.js
-    activeCartridgeId: null, // Keeps track of what game is currently plugged in
+    activeCartridgeId: null, 
     
     userStats: JSON.parse(localStorage.getItem('yardbirdPlatformStats')) || { 
         platformGamesPlayed: 0,
@@ -47,8 +46,8 @@ export const state = {
         },
         fast_math: {
             gamesPlayed: 0, hsText: 0, correctGuesses: 0, totalGuesses: 0
-        }, // <--- ADD THIS COMMA
-        consensus: { gamesPlayed: 0, highScore: 0 } // <--- ADD THIS LINE
+        },
+        consensus: { gamesPlayed: 0, highScore: 0 } 
     },
     globalHighScore: localStorage.getItem('yardbirdHighScore') || 0
 };
