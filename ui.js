@@ -47,6 +47,10 @@ export function setMode(mode, element) {
 export function renderSubPills() {
     const container = document.getElementById('sub-pills');
     container.innerHTML = '';
+    
+    // Safety check just in case subOptions isn't defined for the current mode
+    if (!subOptions[state.gameState.mode]) return;
+
     subOptions[state.gameState.mode].forEach(opt => {
         const pill = document.createElement('div');
         pill.className = `pill pill-wide ${state.gameState.sub === opt ? 'active' : ''}`;
@@ -74,7 +78,6 @@ export function setPill(groupId, element, val) {
     document.querySelectorAll(`#${groupId} .pill`).forEach(el => el.classList.remove('active'));
     element.classList.add('active');
     
-    // We completely removed the check for 'players-group'
     if(groupId === 'rounds-group') state.gameState.rounds = val;
 }
 
@@ -133,10 +136,7 @@ export function buildSetupScreen(manifest) {
     levelGroup.innerHTML = '';
     manifest.levels.forEach((lvl, index) => {
         const card = document.createElement('div');
-        
-        // NEW FIX: Assign the dynamic ID so setMode() can find it!
         card.id = `lvl-${lvl.id}`; 
-        
         card.className = `select-card ${index === 0 ? 'active' : ''}`;
         card.onclick = () => window.setLevel(lvl.id, card);
         card.innerHTML = `<div class="card-title">${lvl.title}</div><div class="card-desc">${lvl.desc}</div>`;
@@ -148,14 +148,12 @@ export function buildSetupScreen(manifest) {
     
     const isSongTrivia = manifest.id === 'song_trivia';
     document.getElementById('sub-selection-area').classList.toggle('hidden', !isSongTrivia);
-    // NEW FIX: Ensure the Rounds menu is ALWAYS visible, regardless of what game is plugged in!
     document.getElementById('players-rounds-area').classList.remove('hidden');
 
     const dailyContainer = document.getElementById('daily-btn-top').parentElement;
     if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
 }
 
-// Keep this empty so gameLogic.js doesn't crash!
 export function populateStats() {} 
 
 export function openStatsLocker() {
@@ -262,8 +260,6 @@ export function openStatsLocker() {
                 <button class="btn btn-reset" onclick="if(window.activeCartridge && window.activeCartridge.resetStats) { window.activeCartridge.resetStats(); hideModal('stats-modal'); }" style="margin-top: 0; padding: 16px;">Reset</button>
             </div>
         `;
-    }
-    // ... ADD THIS right below the song_trivia block ...
     } else if (context === 'consensus') {
         const con = stats.consensus || {};
         modalContent.innerHTML = `
@@ -297,17 +293,14 @@ export function updatePlatformUI(context) {
     const header = document.getElementById('game-header');
     const mainTitle = document.getElementById('main-title');
 
-    // 1. Check if this device is a phone controller!
     const isClient = state.isMultiplayer && !state.isHost;
 
     if (isClient) {
-        // FORCE keep everything hidden and the title centered on the controller
         if (menuBtn) menuBtn.classList.add('hidden');
         if (statsBtn) statsBtn.classList.add('hidden');
         if (infoBtn) infoBtn.classList.add('hidden');
         if (header) header.classList.add('home-screen'); 
     } else {
-        // Normal behavior for Solo play or the TV Host
         if (menuBtn) menuBtn.classList.toggle('hidden', context === 'main_menu');
         if (statsBtn) statsBtn.classList.toggle('hidden', context === 'main_menu');
         if (infoBtn) infoBtn.classList.remove('hidden');
@@ -320,7 +313,6 @@ export function updatePlatformUI(context) {
         }
     }
 
-    // 2. Handle Rules Content
     const rulesContent = document.querySelector('#rules-modal .modal-content');
     if(!rulesContent) return;
 
@@ -333,7 +325,6 @@ export function updatePlatformUI(context) {
     else if (context === 'song_trivia') {
         rulesContent.innerHTML = `<h2>How to Play</h2><ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;"><li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li><li><strong>Today Three:</strong> A daily synced challenge.</li><li><strong>The Lifeline:</strong> Multiple Choice options drop at 10s.</li></ul><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it! Let's Play</button>`;
     }
-    // ... ADD THIS at the very bottom of updatePlatformUI ...
     else if (context === 'consensus') {
         rulesContent.innerHTML = `<h2>How to Play</h2><p style="color:#ccc; line-height: 1.6;">A social party game of voting, debating, and guessing the room. Look at the TV to see the prompt, and use your phone to secretly submit your answers!<br><br><strong>Modes:</strong> Play the classic Party Pack, or use Infinite AI to generate absurd new prompts!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Let's Go!</button>`;
     }
