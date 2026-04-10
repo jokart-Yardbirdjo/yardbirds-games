@@ -83,13 +83,18 @@ function generateMathProblem() {
     return { target, options: options.sort(() => 0.5 - Math.random()) };
 }
 
+// mathLogic.js
+// Replace your startGame() function:
+
 export function startGame() {
     state.isDailyMode = false;
-    // Use Lobby count if multiplayer, otherwise force 1
     state.numPlayers = state.isMultiplayer ? state.numPlayers : 1; 
-    // NEW FIX: Set time based on difficulty!
-    state.timeLimit = state.gameState.level === 'easy' ? 20 : 10;
-    state.maxRounds = 5;  
+    
+    state.timeLimit = state.gameState.level === 'easy' ? 20 : 10; 
+    
+    // NEW FIX: Let players decide how many rounds they want to play!
+    state.maxRounds = state.gameState.rounds; 
+    
     state.curIdx = 0;
     state.rawScores = new Array(state.numPlayers).fill(0);
     state.streaks = new Array(state.numPlayers).fill(0);
