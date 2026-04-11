@@ -89,7 +89,8 @@ async function executeFetchLogic() {
                     model: "gpt-4o-mini",
                     messages: [{ 
                         role: "system", 
-                        content: `Generate ${state.maxRounds} absurd, G-rated questions for a party game. You MUST ONLY generate questions from the Allowed Types: ${allowedTypes.join(', ')}. Format as JSON object with "questions" array. ${typeInstructions}`
+                        // 👇 ADD THE "EQUAL DISTRIBUTION" COMMAND HERE 👇
+                        content: `Generate ${state.maxRounds} absurd, G-rated questions for a party game. You MUST ONLY generate questions from the Allowed Types: ${allowedTypes.join(', ')}. You MUST generate an equal number of questions for each allowed type so they are perfectly balanced. Format as JSON object with "questions" array. ${typeInstructions}`
                     }],
                     response_format: { type: "json_object" },
                     temperature: 1.1 
