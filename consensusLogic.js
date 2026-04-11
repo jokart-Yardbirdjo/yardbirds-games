@@ -112,7 +112,8 @@ async function executeFetchLogic() {
                     model: "gpt-4o-mini",
                     messages: [{ 
                         role: "system", 
-                        content: `Generate ${state.maxRounds} absurd, G-rated questions for a party game. You MUST ONLY generate questions from the Allowed Types: ${allowedTypes.join(', ')}. You MUST generate an equal number of questions for each allowed type so they are perfectly balanced. Format as JSON object with "questions" array. ${typeInstructions}`
+                        // UPDATED: Stricter instruction to ensure equal distribution
+                        content: `Generate EXACTLY ${state.maxRounds} absurd, G-rated questions for a party game. You MUST ONLY generate questions from the Allowed Types: ${allowedTypes.join(', ')}. You MUST provide an equal distribution of these types. Format as JSON object with "questions" array. ${typeInstructions}`
                     }],
                     response_format: { type: "json_object" },
                     temperature: 1.1 
@@ -125,6 +126,9 @@ async function executeFetchLogic() {
             state.songs = generatedQuestions
                 .map(q => ({ ...q, type: parseInt(q.type) }))
                 .filter(q => allowedTypes.includes(q.type));
+            
+            // NEW: Force a shuffle of the AI questions so they don't play sequentially by type
+            state.songs = state.songs.sort(() => 0.5 - Math.random());
             
             if (state.songs.length === 0) throw new Error("AI generated invalid question types.");
 
@@ -261,6 +265,13 @@ export function renderClientUI(hostState) {
     if (!container) return; 
     
     window.consensusTempPayload = { guess1: null, guess2: null }; 
+
+    // NEW: Catch the loading phase and show the UI
+    if (hostState.phase === 'loading') {
+        if(promptDiv) promptDiv.classList.add('hidden');
+        container.innerHTML = `<div style="font-size:1.5rem; color:var(--brand); font-weight:bold; margin-top:40px;">Generating AI Questions...<br><span style="font-size:1rem; color:var(--text-muted);">Get ready!</span></div>`;
+        return;
+    }
 
     if (hostState.phase === 'reveal' || hostState.phase === 'gameover') {
         if(promptDiv) promptDiv.innerText = "";
@@ -518,8 +529,22 @@ export function evaluateMultiplayerRound(players) {
         let aVotes = 0, bVotes = 0;
         pIds.forEach(pid => { if(players[pid].guess1 === 'A') aVotes++; else if(players[pid].guess1 === 'B') bVotes++; });
         let roomWinner = aVotes > bVotes ? 'A' : (bVotes > aVotes ? 'B' : 'Tie');
-        revealHTML = `The Room Chose: <strong style="color:var(--brand)">${roomWinner === 'A' ? q.optA : (roomWinner === 'B' ? q.optB : 'Tie')}</strong>`;
-        pIds.forEach(pid => { if (players[pid].guess2 === roomWinner) roundEarnings[pid] = 300 * mult; });
+        
+        // UPDATED: Distinct UI message for a tie
+        if (roomWinner === 'Tie') {
+            revealHTML = `<div style="color:var(--brand)">It's a Tie! Both sides win.</div>`;
+        } else {
+            revealHTML = `The Room Chose: <strong style="color:var(--brand)">${roomWinner === 'A' ? q.optA : q.optB}</strong>`;
+        }
+        
+        pIds.forEach(pid => { 
+            // UPDATED: If it's a tie, anyone who made a valid prediction gets points
+            if (roomWinner === 'Tie' && (players[pid].guess2 === 'A' || players[pid].guess2 === 'B')) {
+                roundEarnings[pid] = 300 * mult;
+            } else if (players[pid].guess2 === roomWinner) {
+                roundEarnings[pid] = 300 * mult; 
+            }
+        });
     }
     else if (q.type === 3) {
         revealHTML = `Top Answer: <strong style="color:var(--brand)">${q.options[0]}</strong><br>#2: ${q.options[1]}<br>#3: ${q.options[2]}`;
@@ -608,6 +633,8 @@ function endGameSequence() {
             });
             
             results.sort((a, b) => b.score - a.score);
+            // NEW: Push the final sorted leaderboard to the room for clients to read
+            db.ref(`rooms/${state.roomCode}/finalLeaderboard`).set(results);
             let podium = `<div style="text-align: left; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">`;
             results.forEach((p, idx) => {
                 let medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '👏'));
