@@ -11,15 +11,19 @@ export function setMode(mode, element) {
     state.gameState.mode = mode;
 
     const customInput = document.getElementById('custom-input');
+    const subArea = document.getElementById('sub-selection-area'); // We define it here now
 
     // Safe check: Only run sub-options logic if this mode uses them (like Song Trivia)
     if (subOptions[mode]) {
+        subArea.classList.remove('hidden'); // Show it if it has sub-options
         state.gameState.sub = subOptions[mode][0]; 
         document.getElementById('sub-label').innerText = mode === 'movie' ? 'Select Cinema Region' : (mode === 'artist' ? 'Select Artist' : 'Select Era / Genre');
         customInput.classList.add('hidden');
         customInput.placeholder = "Separate multiple entries with a comma";
         customInput.type = "text";
         renderSubPills();
+    } else {
+        subArea.classList.add('hidden'); // Hide it completely for Fast Math & Consensus
     }
 
     // Consensus Hook: Show API Key input if AI Infinite is selected
@@ -29,7 +33,7 @@ export function setMode(mode, element) {
         customInput.type = "password"; // Hides the key visually
         const savedKey = localStorage.getItem('consensus_openai_key');
         if (savedKey) customInput.value = savedKey;
-    } else if (mode === 'party_pack') {
+    } else if (mode === 'party_pack' || !subOptions[mode]) {
         customInput.classList.add('hidden');
     }
 
@@ -122,6 +126,7 @@ export function renderPlaylist(platform) {
 export function buildSetupScreen(manifest) {
     document.getElementById('main-title').innerText = manifest.title;
     
+    // Rule 6: Select Game Mode (Consistent container, dynamic options)
     const modeGroup = document.getElementById('mode-group');
     modeGroup.innerHTML = ''; 
     manifest.modes.forEach((mode, index) => {
@@ -132,6 +137,7 @@ export function buildSetupScreen(manifest) {
         modeGroup.appendChild(card);
     });
 
+    // Rule 9: Select Difficulty (Consistent container, dynamic definitions)
     const levelGroup = document.getElementById('level-group');
     levelGroup.innerHTML = '';
     manifest.levels.forEach((lvl, index) => {
@@ -143,17 +149,24 @@ export function buildSetupScreen(manifest) {
         levelGroup.appendChild(card);
     });
 
+    // Rule 8: Rounds are universally consistent and always visible
+    document.getElementById('players-rounds-area').classList.remove('hidden');
+
+    // Rule 4: Daily Mode is optional. We check if the manifest declares it.
+    const dailyContainer = document.getElementById('daily-btn-top').parentElement;
+    if (dailyContainer) {
+        dailyContainer.classList.toggle('hidden', !manifest.hasDaily);
+        // Also hide the separator line if Daily is hidden
+        dailyContainer.nextElementSibling.classList.toggle('hidden', !manifest.hasDaily); 
+    }
+
+    // Initialize default states (This also triggers Rule 7: Sub-modes)
     state.gameState.mode = manifest.modes[0].id;
     state.gameState.level = manifest.levels[0].id;
     
-    const isSongTrivia = manifest.id === 'song_trivia';
-    document.getElementById('sub-selection-area').classList.toggle('hidden', !isSongTrivia);
-    document.getElementById('players-rounds-area').classList.remove('hidden');
-
-    const dailyContainer = document.getElementById('daily-btn-top').parentElement;
-    if (dailyContainer) dailyContainer.classList.toggle('hidden', !isSongTrivia);
+    // Simulate clicking the first mode to properly show/hide the Era/Genre sub-selection
+    window.setMode(manifest.modes[0].id, modeGroup.firstChild);
 }
-
 export function populateStats() {} 
 
 export function openStatsLocker() {
