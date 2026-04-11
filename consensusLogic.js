@@ -25,7 +25,6 @@ const ROUND_TYPES = {
     5: "Shot In The Dark"
 };
 
-// --- STANDARD CARTRIDGE HOOKS ---
 export function resetStats() {
     if(confirm("Reset Consensus lifetime stats?")) {
         state.userStats.consensus = { gamesPlayed: 0, highScore: 0 };
@@ -46,7 +45,6 @@ export function startGame() {
     state.rawScores = new Array(state.numPlayers).fill(0);
     state.streaks = new Array(state.numPlayers).fill(0);
 
-    // Generate Double Rounds (1 per 5 rounds)
     state.doubleRounds = [];
     for (let i = 0; i < state.maxRounds; i += 5) {
         let min = i === 0 ? 1 : i; 
@@ -61,7 +59,6 @@ export function startGame() {
 }
 
 async function executeFetchLogic() {
-    // Bulletproof Solo Filter based on actual player count
     const allowedTypes = state.numPlayers > 1 ? [1, 2, 3, 4, 5] : [3, 5]; 
     state.songs = []; 
     
@@ -78,7 +75,6 @@ async function executeFetchLogic() {
         try {
             document.getElementById('feedback-setup').innerText = "Generating absurd AI prompts...";
 
-            // Dynamically build the prompt so the AI never sees rules for restricted types
             let typeInstructions = "";
             if (allowedTypes.includes(1)) typeInstructions += `Type 1 (Who is most likely to): {"type": 1, "prompt": "Who is most likely to..."}. `;
             if (allowedTypes.includes(2)) typeInstructions += `Type 2 (This or That): {"type": 2, "prompt": "Which is superior?", "optA": "...", "optB": "..."}. `;
@@ -103,14 +99,12 @@ async function executeFetchLogic() {
             const data = await response.json();
             let generatedQuestions = JSON.parse(data.choices[0].message.content).questions;
 
-            // SAFETY NET: Force type to integer and filter out any hallucinations
             state.songs = generatedQuestions
                 .map(q => ({ ...q, type: parseInt(q.type) }))
                 .filter(q => allowedTypes.includes(q.type));
             
             if (state.songs.length === 0) throw new Error("AI generated invalid question types.");
 
-            // Fill missing questions locally if the AI filtered out too many
             if (state.songs.length < state.maxRounds) {
                 const needed = state.maxRounds - state.songs.length;
                 const res = await fetch('db_consensus.json');
@@ -158,12 +152,17 @@ function launchGameUI() {
     document.getElementById('btn-container').classList.add('hidden');
     document.getElementById('reveal-art').style.display = 'none';
 
-    document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
-        <div class="score-pill" style="border-color:${colors[i % colors.length]};">
-            <div class="p-name" style="color:${colors[i % colors.length]}">${state.numPlayers === 1 ? 'SCORE' : 'P'+(i+1)}</div>
-            <div class="p-pts" style="color:#fff">${s}</div>
-            <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
-        </div>`).join('');
+    // FIX #3: Hide initial scores for the Host TV so it's completely clean
+    if (state.isHost) {
+        document.getElementById('score-board').innerHTML = '';
+    } else {
+        document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
+            <div class="score-pill" style="border-color:${colors[i % colors.length]};">
+                <div class="p-name" style="color:${colors[i % colors.length]}">${state.numPlayers === 1 ? 'SCORE' : 'P'+(i+1)}</div>
+                <div class="p-pts" style="color:#fff">${s}</div>
+                <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
+            </div>`).join('');
+    }
 
     nextRound();
 }
@@ -173,10 +172,15 @@ function nextRound() {
     state.isProcessing = false;
     
     if (state.isHost) {
+        document.getElementById('score-board').innerHTML = ''; // Keep clean during prompts
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             if(snap.exists()) {
                 let updates = {};
-                snap.forEach(p => { updates[`${p.key}/guess1`] = null; updates[`${p.key}/guess2`] = null; });
+                snap.forEach(p => { 
+                    updates[`${p.key}/guess1`] = null; 
+                    updates[`${p.key}/guess2`] = null; 
+                    updates[`${p.key}/status`] = 'guessing'; // FIX #4: Clear locks
+                });
                 db.ref(`rooms/${state.roomCode}/players`).update(updates);
             }
         });
@@ -195,6 +199,7 @@ function nextRound() {
     document.getElementById('feedback').innerHTML = `
         <div style="font-size:2.5rem; font-weight:900; color:#fff; margin-bottom:10px;">${q.prompt}</div>
         <div style="color:var(--p4); font-weight:bold; text-transform:uppercase;">${subText}</div>
+        ${state.isHost ? `<div id="host-lock-status" style="color:var(--brand); font-size:1.3rem; font-weight:bold; margin-top:20px;">LOCKED IN: 0 / ${state.numPlayers}</div>` : ''}
     `;
 
     if (state.isHost) {
@@ -228,15 +233,23 @@ function nextRound() {
 // --- DYNAMIC CLIENT UI HOOK ---
 export function renderClientUI(hostState) {
     const container = document.getElementById('client-consensus-ui');
+    const promptDiv = document.getElementById('client-prompt');
     if (!container) return; 
     
     if (hostState.phase === 'reveal' || hostState.phase === 'gameover') {
+        if(promptDiv) promptDiv.innerText = "";
         container.innerHTML = `<div style="font-size:1.5rem; color:var(--text-muted); font-weight:bold; margin-top:40px;">Look at the TV!</div>`;
         return;
     }
 
     let html = "";
     const q = hostState.qData;
+    
+    // FIX #6: Render prompt on phone directly
+    if(promptDiv && q) {
+        promptDiv.innerText = q.prompt;
+        promptDiv.classList.remove('hidden');
+    }
 
     if (hostState.type === 1) {
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
@@ -296,10 +309,11 @@ window.submitConsensusGuess = (payload, optionalVal) => {
     if (typeof payload === 'object') {
         if (!payload.guess1 && payload.guess1 !== false && payload.guess1 !== 0) return alert("Please select an option for Part 1!");
         if (!payload.guess2 && payload.guess2 !== false && payload.guess2 !== 0) return alert("Please enter a prediction for Part 2!");
+        payload.status = 'locked'; // FIX #4: Push lock status so TV knows
         db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update(payload);
     } else {
         if (!optionalVal && optionalVal !== 0) return alert("Please enter a value!");
-        db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}/${payload}`).set(optionalVal);
+        db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update({ [payload]: optionalVal, status: 'locked' }); // FIX #4
     }
     document.getElementById('client-consensus-ui').innerHTML = `<h2 style="color:var(--success); font-size:2.5rem; margin-top:30px;">Locked In!</h2><p style="color:var(--text-muted);">Look at the TV.</p>`;
 };
@@ -459,6 +473,7 @@ export function evaluateMultiplayerRound(players) {
 
     document.getElementById('feedback').innerHTML = fbHTML + `</div>`;
     
+    // FIX #3: Only show the score pills during the Reveal phase!
     document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
         <div class="score-pill" style="border-color:${colors[i % colors.length]};">
             <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
@@ -481,7 +496,12 @@ function endGameSequence() {
         db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'gameover' });
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             const players = snap.val();
-            let results = Object.keys(players).map((pid, idx) => ({ name: players[pid].name, score: state.rawScores[idx] }));
+            let results = Object.keys(players).map((pid, idx) => {
+                // FIX #5: Push Final Scores back to the database for the phones!
+                db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: state.rawScores[idx] });
+                return { name: players[pid].name, score: state.rawScores[idx] };
+            });
+            
             results.sort((a, b) => b.score - a.score);
             let podium = `<div style="text-align: left; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">`;
             results.forEach((p, idx) => {
