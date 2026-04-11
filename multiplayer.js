@@ -16,7 +16,7 @@ export function handleHostSetup() {
     document.getElementById('start-btn-top').onclick = createRoom;
     document.getElementById('daily-btn-top').parentElement.classList.add('hidden'); 
     
-    // FIX #1: Removed the line that hides the rounds box, so it is always visible!
+    document.getElementById('players-rounds-area').classList.add('hidden'); 
     
     document.getElementById('cancel-setup-btn').classList.remove('hidden');
     document.getElementById('stats-btn').classList.add('hidden');
@@ -107,6 +107,10 @@ export async function joinRoom() {
     if (!roomSnap.exists()) { fb.innerText = "Room not found. Check the code!"; return; }
     if (roomSnap.val().state !== 'lobby') { fb.innerText = "Game is already in progress!"; return; }
 
+    // FIX #2: Pre-load the Cartridge right now so it is ready before the game even starts!
+    const cartId = roomSnap.val().cartridgeId;
+    if (cartId && window.loadCartridge) window.loadCartridge(cartId);
+
     state.roomCode = codeInput;
     state.myPlayerId = "player_" + Date.now() + Math.floor(Math.random()*1000); 
 
@@ -120,13 +124,10 @@ export async function joinRoom() {
     waitScreen.innerHTML = `<h2 style="color:var(--brand);">You're in!</h2><p style="font-size:1.2rem;">Look at the big screen.</p>`;
     document.querySelector('.container').appendChild(waitScreen);
 
-    // FIX #2: Await the cartridge ID before showing the play screen to avoid UI flashes
-    db.ref(`rooms/${state.roomCode}/state`).on('value', async (snap) => {
+    // Dynamic Game Start
+    db.ref(`rooms/${state.roomCode}/state`).on('value', (snap) => {
         if (!snap.exists()) { location.reload(); }
         else if (snap.val() === 'playing') {
-            const cartSnap = await db.ref(`rooms/${state.roomCode}/cartridgeId`).once('value');
-            if(cartSnap.exists() && window.loadCartridge) window.loadCartridge(cartSnap.val());
-            
             document.getElementById('client-wait-screen').classList.add('hidden');
             document.getElementById('client-play-screen').classList.remove('hidden');
         } else if (snap.val() === 'finished') {
@@ -145,16 +146,14 @@ export async function joinRoom() {
         }
     });
 
-    // FIX #2 Continued: Force text boxes to stay hidden unless strictly Song Trivia
     db.ref(`rooms/${state.roomCode}/currentRound`).on('value', snap => {
         if(snap.exists() && document.getElementById('client-status')) {
             document.getElementById('client-status').innerText = `ROUND ${snap.val()}`;
             
             document.getElementById('client-locked-screen').classList.add('hidden');
             document.getElementById('client-mc-inputs').classList.add('hidden');
-            if (document.getElementById('client-consensus-ui')) document.getElementById('client-consensus-ui').innerHTML = '';
             
-            if (state.activeCartridgeId === 'song_trivia') {
+            if (window.activeCartridge && window.activeCartridge.manifest.id === 'song_trivia') {
                 document.getElementById('client-text-inputs').classList.remove('hidden');
             } else {
                 document.getElementById('client-text-inputs').classList.add('hidden');
@@ -198,7 +197,6 @@ export async function startMultiplayerGame() {
     
     await db.ref(`rooms/${state.roomCode}`).update({ state: 'playing', currentRound: 1, mode: state.gameState.mode });
 
-    // Host checks lock statuses here!
     db.ref(`rooms/${state.roomCode}/players`).on('value', (snap) => {
         if (!state.isHost || !snap.exists()) return;
         
