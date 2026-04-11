@@ -180,12 +180,13 @@
         
         <div id="client-end-screen" class="hidden" style="width: 100%; text-align: center; padding: 40px 10px;">
             <h2 style="color:var(--brand); font-size: 2.5rem; margin-bottom: 5px;">Game Over!</h2>
-            <div style="font-size: 1.1rem; color: #ccc; margin-bottom: 25px;">Look at the big screen for the final podium!</div>
             
-            <div style="background: var(--surface); border: 2px solid var(--border); padding: 25px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="background: var(--surface); border: 2px solid var(--border); padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                 <div style="font-size: 0.9rem; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Your Final Score</div>
                 <div id="client-final-score" style="font-size: 4.5rem; font-weight: 900; color: var(--highlight); font-family: 'Courier New', monospace; margin-top: 5px;">0</div>
             </div>
+
+            <div id="client-leaderboard-container" style="margin-bottom: 30px;"></div>
 
             <button class="btn btn-main" onclick="location.reload()">Return to Main Menu</button>
         </div>
