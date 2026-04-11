@@ -25,7 +25,6 @@ const ROUND_TYPES = {
     5: "Shot In The Dark"
 };
 
-// --- STANDARD CARTRIDGE HOOKS ---
 export function resetStats() {
     if(confirm("Reset Consensus lifetime stats?")) {
         state.userStats.consensus = { gamesPlayed: 0, highScore: 0 };
@@ -209,8 +208,25 @@ function nextRound() {
                 db.ref(`rooms/${state.roomCode}/players`).update(updates);
             }
         });
-    }
 
+        // The "Get Ready" Loading Phase
+        document.getElementById('feedback').innerHTML = `
+            <div style="font-size:3.5rem; font-weight:900; color:var(--brand); margin-top:40px; margin-bottom:15px;">ROUND ${state.curIdx + 1}</div>
+            <div style="font-size:1.8rem; color:#fff; font-weight:bold;">Get Ready...</div>
+        `;
+        document.getElementById('timer').innerText = "";
+        document.getElementById('active-player').innerText = "LOADING...";
+
+        db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'loading' });
+
+        // Show prompt after 3 seconds
+        setTimeout(displayPrompt, 3000);
+    } else if (state.numPlayers === 1) {
+        displayPrompt();
+    }
+}
+
+function displayPrompt() {
     const q = state.songs[state.curIdx];
     const isDouble = state.doubleRounds.includes(state.curIdx);
     const tag = document.getElementById('active-player');
@@ -263,9 +279,10 @@ export function renderClientUI(hostState) {
     
     window.consensusTempPayload = { guess1: null, guess2: null }; 
 
-    if (hostState.phase === 'reveal' || hostState.phase === 'gameover') {
+    if (hostState.phase === 'reveal' || hostState.phase === 'gameover' || hostState.phase === 'loading') {
         if(promptDiv) promptDiv.innerText = "";
-        container.innerHTML = `<div style="font-size:1.5rem; color:var(--text-muted); font-weight:bold; margin-top:40px;">Look at the TV!</div>`;
+        let waitText = hostState.phase === 'loading' ? 'Get Ready...' : 'Look at the TV!';
+        container.innerHTML = `<div style="font-size:1.8rem; color:var(--text-muted); font-weight:bold; margin-top:40px;">${waitText}</div>`;
         return;
     }
 
@@ -282,7 +299,7 @@ export function renderClientUI(hostState) {
             let inner = "";
             snap.forEach(p => {
                 const isMe = p.key === state.myPlayerId;
-                // BUG FIX: Removed the 'disabled' attribute. Players can now vote for themselves!
+                // FIX: No disabled attribute. You CAN vote for yourself.
                 inner += `<button class="mc-btn touch-opt" onclick="setConsensusLocalGuess('guess1', '${p.key}'); submitConsensusPayload(true)">${p.val().name} ${isMe ? '(You)' : ''}</button>`;
             });
             container.innerHTML = inner;
@@ -290,6 +307,7 @@ export function renderClientUI(hostState) {
         return; 
     } 
     else if (hostState.type === 2) {
+        // Pass "type 2" explicitly to the submit payload to prevent NaN checks
         html += `
             <div style="text-align:left; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid var(--border);">
                 
@@ -310,7 +328,7 @@ export function renderClientUI(hostState) {
                 </div>
 
             </div>`;
-        html += `<button class="btn btn-main" onclick="submitConsensusPayload()">LOCK IT IN</button>`;
+        html += `<button class="btn btn-main" onclick="submitConsensusPayload(false, 2)">LOCK IT IN</button>`;
     }
     else if (hostState.type === 3) {
         q.options.forEach((opt, idx) => {
@@ -318,6 +336,7 @@ export function renderClientUI(hostState) {
         });
     }
     else if (hostState.type === 4) {
+        // Pass "type 4" explicitly so it safely parses the number
         html += `
             <div style="text-align:left; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid var(--border);">
                 
@@ -335,7 +354,7 @@ export function renderClientUI(hostState) {
                 </div>
 
             </div>`;
-        html += `<button class="btn btn-main" onclick="submitConsensusPayload()">LOCK IT IN</button>`;
+        html += `<button class="btn btn-main" onclick="submitConsensusPayload(false, 4)">LOCK IT IN</button>`;
     }
     else if (hostState.type === 5) {
         html += `<input type="number" id="cons-num" placeholder="Your Exact Guess" style="margin-bottom:15px; width:100%; padding:15px; background:var(--surface); color:#fff; border:2px solid var(--border); border-radius:8px; font-size:1.2rem; outline:none; text-align:center;" oninput="window.consensusTempPayload.guess1 = this.value">`;
@@ -349,12 +368,10 @@ window.setConsensusLocalGuess = (part, value) => {
     window.consensusTempPayload[part] = value;
     if (window.activeCartridge.manifest.id !== 'consensus') return; 
     
-    // --- TYPE 2 FLOW ---
     if(part === 'guess1' && (value === 'A' || value === 'B')) { 
         document.getElementById('t2-g1-A').classList.remove('active'); document.getElementById('t2-g1-B').classList.remove('active');
         document.getElementById(`t2-g1-${value}`).classList.add('active');
         
-        // Lock Part 1, Unlock Part 2
         document.getElementById('t2-part1-container').style.opacity = '0.5';
         document.getElementById('t2-part1-container').style.pointerEvents = 'none';
         document.getElementById('t2-part2-container').style.opacity = '1';
@@ -364,18 +381,15 @@ window.setConsensusLocalGuess = (part, value) => {
         document.getElementById('t2-g2-A').classList.remove('active'); document.getElementById('t2-g2-B').classList.remove('active');
         document.getElementById(`t2-g2-${value}`).classList.add('active');
     
-    // --- TYPE 4 FLOW ---
     } else if(part === 'guess1' && typeof value === 'boolean') { 
         document.getElementById('t4-g1-true').classList.remove('active'); document.getElementById('t4-g1-false').classList.remove('active');
         document.getElementById(`t4-g1-${value}`).classList.add('active');
         
-        // Lock Part 1, Unlock Part 2
         document.getElementById('t4-part1-container').style.opacity = '0.5';
         document.getElementById('t4-part1-container').style.pointerEvents = 'none';
         document.getElementById('t4-part2-container').style.opacity = '1';
         document.getElementById('t4-part2-container').style.pointerEvents = 'auto';
 
-        // Unlock and Auto-focus the prediction field for ultimate speed
         const predictInput = document.getElementById('t4-g2');
         if (predictInput) {
             predictInput.disabled = false;
@@ -384,26 +398,21 @@ window.setConsensusLocalGuess = (part, value) => {
     }
 };
 
-window.submitConsensusPayload = (isSinglePart = false) => {
+window.submitConsensusPayload = (isSinglePart = false, roundType = null) => {
     const payload = window.consensusTempPayload;
     
-    // 1. Validate Part 1
     if (payload.guess1 === null || payload.guess1 === "") {
         return alert(isSinglePart ? "Please make a selection!" : "Please select an option for Part 1!");
     }
 
-    // 2. Safely Validate Part 2
     if (!isSinglePart) {
         if (payload.guess2 === null || payload.guess2 === "") {
             return alert("Please make a prediction for Part 2!");
         }
-        // BUG FIX: Only force parse to Integer if it's meant to be a number (Type 4)
-        if (typeof payload.guess2 === 'string') {
-            // If the string is 'A' or 'B', leave it alone! Otherwise, it's a number prediction.
-            if (payload.guess2 !== 'A' && payload.guess2 !== 'B') {
-                payload.guess2 = parseInt(payload.guess2, 10);
-                if (isNaN(payload.guess2)) return alert("Please enter a valid number for Part 2!");
-            }
+        // ONLY parse an integer if this is explicitly a Type 4 question
+        if (roundType === 4 && typeof payload.guess2 === 'string') {
+            payload.guess2 = parseInt(payload.guess2, 10);
+            if (isNaN(payload.guess2)) return alert("Please enter a valid number for Part 2!");
         }
     }
 
@@ -480,7 +489,15 @@ export function evaluateSoloGuess(source) {
     }
 
     document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]}"><div class="p-name">SCORE</div><div class="p-pts">${state.rawScores[0]}</div><div class="p-streak">🔥 ${state.streaks[0]}</div></div>`;
-    state.curIdx++; setTimeout(nextRound, 4000);
+    
+    // Solo Get Ready flow
+    setTimeout(() => {
+        state.curIdx++;
+        if (state.curIdx >= state.maxRounds) { endGameSequence(); return; }
+        document.getElementById('feedback').innerHTML = `<div style="font-size:3.5rem; font-weight:900; color:var(--brand); margin-top:40px; margin-bottom:15px;">ROUND ${state.curIdx + 1}</div><div style="font-size:1.8rem; color:#fff; font-weight:bold;">Get Ready...</div>`;
+        document.getElementById('timer').innerText = "";
+        setTimeout(displayPrompt, 3000);
+    }, 4000);
 }
 
 // --- MULTIPLAYER SCORING ENGINE ---
@@ -493,7 +510,9 @@ export function evaluateMultiplayerRound(players) {
     const isDouble = state.doubleRounds.includes(state.curIdx);
     const mult = isDouble ? 2 : 1;
     let roundEarnings = {}; 
-    const pIds = Object.keys(players || {});
+    
+    // FIX: Always alphabetically sort Player IDs to ensure 100% stable indexing mapping
+    const pIds = Object.keys(players || {}).sort();
     pIds.forEach(pid => roundEarnings[pid] = 0);
 
     let revealHTML = "";
@@ -583,7 +602,7 @@ export function evaluateMultiplayerRound(players) {
             <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
         </div>`).join('');
 
-    state.curIdx++; setTimeout(nextRound, 7000); 
+    setTimeout(nextRound, 7000); 
 }
 
 function endGameSequence() {
@@ -599,7 +618,9 @@ function endGameSequence() {
         
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             const players = snap.val();
-            let results = Object.keys(players).map((pid, idx) => {
+            // FIX: Stable mapping utilizing sorted pIds for Final Sync
+            const pIds = Object.keys(players || {}).sort();
+            let results = pIds.map((pid, idx) => {
                 db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: state.rawScores[idx] });
                 return { name: players[pid].name, score: state.rawScores[idx] };
             });
