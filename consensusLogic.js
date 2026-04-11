@@ -76,6 +76,15 @@ async function executeFetchLogic() {
         
         try {
             document.getElementById('feedback-setup').innerText = "Generating absurd AI prompts...";
+
+            // DYNAMIC PROMPT BUILDER: Only feed the AI the rules for the allowed types
+            let typeInstructions = "";
+            if (allowedTypes.includes(1)) typeInstructions += `Type 1: {type: 1, prompt: "Who is most likely to..."}. `;
+            if (allowedTypes.includes(2)) typeInstructions += `Type 2: {type: 2, prompt: "Which is superior?", optA: "...", optB: "..."}. `;
+            if (allowedTypes.includes(3)) typeInstructions += `Type 3: {type: 3, prompt: "Name a...", options: ["#1", "#2", "#3", "Fake"]}. `;
+            if (allowedTypes.includes(4)) typeInstructions += `Type 4: {type: 4, prompt: "Raise your hand if..."}. `;
+            if (allowedTypes.includes(5)) typeInstructions += `Type 5: {type: 5, prompt: "Guess the exact number of...", answer: <int>}. `;
+
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -83,15 +92,23 @@ async function executeFetchLogic() {
                     model: "gpt-4o-mini",
                     messages: [{ 
                         role: "system", 
-                        content: `Generate ${state.maxRounds} absurd, G-rated questions for a party game. Allowed Types: ${allowedTypes.join(', ')}. Format as JSON object with "questions" array. Type 1: {type: 1, prompt: "Who is most likely to..."}. Type 2: {type: 2, prompt: "Which is superior?", optA: "...", optB: "..."}. Type 3: {type: 3, prompt: "Name a...", options: ["#1", "#2", "#3", "Fake"]}. Type 4: {type: 4, prompt: "Raise your hand if..."}. Type 5: {type: 5, prompt: "Guess the exact number of...", answer: <int>}.`
+                        content: `Generate ${state.maxRounds} absurd, G-rated questions for a party game. You MUST ONLY generate questions from the Allowed Types: ${allowedTypes.join(', ')}. Format as JSON object with "questions" array. ${typeInstructions}`
                     }],
-                    response_format: { type: "json_object" }
+                    response_format: { type: "json_object" },
+                    temperature: 1.1 // Add a little chaos to the generations
                 })
             });
             const data = await response.json();
-            state.songs = JSON.parse(data.choices[0].message.content).questions;
+            let generatedQuestions = JSON.parse(data.choices[0].message.content).questions;
+
+            // SAFETY NET: Force filter any hallucinations that still slip through
+            state.songs = generatedQuestions.filter(q => allowedTypes.includes(q.type));
+            
+            if (state.songs.length === 0) throw new Error("AI generated invalid question types.");
+
         } catch(e) {
-            alert("AI Generation failed. Falling back to Party Pack.");
+            console.error(e);
+            alert("AI Generation failed or hallucinated. Falling back to Party Pack.");
             await loadOfflineQuestions(allowedTypes);
         }
     } else {
