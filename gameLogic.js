@@ -483,8 +483,12 @@ function nextTrack() {
     const currentColor = colors[pIdx % colors.length]; 
     const tag = document.getElementById('active-player');
     
+    // 👇 WE MUST DEFINE THE BONUS VARIABLES HERE 👇
+    const isDoubleRound = state.doubleRounds && state.doubleRounds.includes(state.curIdx);
+    const doubleText = isDoubleRound ? " - ⭐ 2X BONUS!" : "";
+    
     if (state.isMultiplayer && state.isHost) {
-        updateLeaderboard(-1); 
+        updateLeaderboard(-1);
         document.documentElement.style.setProperty('--active-vis', 'var(--highlight)');
         document.getElementById('main-title').style.color = '#ffffff';
 
