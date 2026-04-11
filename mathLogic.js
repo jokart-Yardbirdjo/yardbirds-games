@@ -100,6 +100,8 @@ export function startGame() {
 
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('play-screen').classList.remove('hidden');
+    // ADD THIS LINE:
+    document.querySelectorAll('.header-btn').forEach(btn => btn.classList.add('hidden'));
     document.getElementById('guess-fields').classList.add('hidden');
     document.getElementById('btn-container').classList.add('hidden');
     document.getElementById('visualizer').classList.add('hidden');
@@ -240,7 +242,7 @@ export function evaluateGuess(isCorrect) {
     } else {
         state.streaks[0] = 0;
         sfxBuzzer.currentTime = 0; sfxBuzzer.play().catch(()=>{});
-        document.getElementById('feedback').innerHTML = `<div style="color:var(--fail); font-size:1.5rem; font-weight:bold;">❌ WRONG!</div>`;
+        document.getElementById('feedback').innerHTML = `<div style="color:var(--fail); font-size:1.5rem; font-weight:bold; margin-bottom:5px;">❌ INCORRECT</div>`;
     }
 
     document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]}"><div class="p-name">SCORE</div><div class="p-pts">${state.rawScores[0]}</div><div class="p-streak">🔥 ${state.streaks[0]}</div></div>`;
