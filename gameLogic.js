@@ -61,6 +61,7 @@ export async function startDailyChallenge() {
         state.songs = state.globalPool;
         
         state.rawScores = [0]; state.streaks = [0]; state.matchHistory = [[]];
+        state.doubleRounds = []; // <-- ADD THIS
         launchGameUI();
     } catch (e) {
         alert(e.message || "Daily Vault requires db_daily.json. Playing fallback...");
@@ -69,6 +70,7 @@ export async function startDailyChallenge() {
         state.globalPool = fallbackData.results.filter(t => t.previewUrl);
         state.songs = state.globalPool.sort(() => 0.5 - Math.random()).slice(0, 3);
         state.rawScores = [0]; state.streaks = [0]; state.matchHistory = [[]];
+        state.doubleRounds = []; // <-- ADD THIS
         launchGameUI();
     }
 }
@@ -492,14 +494,11 @@ function nextTrack() {
         document.documentElement.style.setProperty('--active-vis', 'var(--highlight)');
         document.getElementById('main-title').style.color = '#ffffff';
 
-        // Append the bonus text!
+        // Append the bonus text cleanly!
         tag.innerText = `ROUND ${state.curIdx + 1} / ${state.maxRounds}${doubleText}`;
         tag.style.color = isDoubleRound ? "#ffcc00" : "var(--highlight)"; 
         tag.style.borderColor = isDoubleRound ? "#ffcc00" : "var(--highlight)";
-        // ...
         
-        tag.innerText = `ROUND ${state.curIdx + 1} / ${state.maxRounds}`;
-        tag.style.color = "var(--highlight)"; tag.style.borderColor = "var(--highlight)";
         db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
         db.ref(`rooms/${state.roomCode}/currentMC`).remove(); // Hide from phones
 
@@ -510,14 +509,18 @@ function nextTrack() {
     } else {
         updateLeaderboard(pIdx); 
         document.documentElement.style.setProperty('--active-vis', currentColor);
-        // Remove or comment out this line:
-        // if(!state.isDailyMode) document.getElementById('main-title').style.color = currentColor; 
         
         const currentRound = Math.floor(state.curIdx / state.numPlayers) + 1;
-        tag.innerText = state.numPlayers > 1 ? `PLAYER ${pIdx + 1} TURN (Round ${currentRound}/${state.roundsPerPlayer})` : `Round ${currentRound}/${state.roundsPerPlayer}`;
-        // Standardize tag border to white/highlight and remove button overrides entirely!
-        tag.style.color = "var(--highlight)"; 
-        tag.style.borderColor = "var(--border)";
+        
+        // Cleanly separate Daily text from Solo/Controller text
+        if (state.isDailyMode) {
+             tag.innerText = `TODAY'S SONG ${currentRound}/${state.roundsPerPlayer}`;
+        } else {
+             tag.innerText = state.numPlayers > 1 ? `PLAYER ${pIdx + 1} TURN (Round ${currentRound}/${state.roundsPerPlayer})` : `Round ${currentRound}/${state.roundsPerPlayer}${doubleText}`;
+        }
+        
+        tag.style.color = isDoubleRound ? "#ffcc00" : "var(--highlight)"; 
+        tag.style.borderColor = isDoubleRound ? "#ffcc00" : "var(--border)";
         
         // Reset buttons to CSS defaults
         document.getElementById('stop-btn').style.cssText = "";
@@ -758,7 +761,7 @@ export function evaluateGuess(isCorrectMC = null) {
         state.streaks[pIdx] = 0; roundPts = 0; 
     }
 
-    if (state.doubleRounds.includes(state.curIdx) && correct) {
+    if (state.doubleRounds && state.doubleRounds.includes(state.curIdx) && correct) {
         roundPts *= 2;
         fbHTML += `<div style="color:#ffcc00; font-size:0.9rem; margin-top:5px; font-weight:bold;">⭐ 2X BONUS ROUND APPLIED!</div>`;
     }
