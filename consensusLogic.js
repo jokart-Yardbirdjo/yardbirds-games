@@ -200,10 +200,29 @@ function nextRound() {
     if (state.curIdx >= state.maxRounds) { endGameSequence(); return; }
     state.isProcessing = false;
     
+    // 👇 FIX: We MUST define the question 'q' at the very top before doing anything else!
+    const q = state.songs[state.curIdx];
+    const isDouble = state.doubleRounds.includes(state.curIdx);
+
     if (state.isHost) {
+        document.getElementById('score-board').innerHTML = ''; 
+        db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
+        
+        db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
+            if(snap.exists()) {
+                let updates = {};
+                snap.forEach(p => { 
+                    updates[`${p.key}/guess1`] = null; 
+                    updates[`${p.key}/guess2`] = null; 
+                    updates[`${p.key}/status`] = 'guessing'; 
+                });
+                db.ref(`rooms/${state.roomCode}/players`).update(updates);
+            }
+        });
+
         const currentType = parseInt(q.type) || 5; 
         
-        // NEW FIX: Sanitize the payload to completely eliminate 'undefined' crashes
+        // Sanitize the payload to completely eliminate 'undefined' crashes
         const safeQData = {
             type: currentType,
             prompt: q.prompt || "Check TV for prompt",
@@ -223,8 +242,6 @@ function nextRound() {
         renderSoloUI(q);
     }
 
-    const q = state.songs[state.curIdx];
-    const isDouble = state.doubleRounds.includes(state.curIdx);
     const tag = document.getElementById('active-player');
     tag.innerText = `${ROUND_TYPES[q.type]} (Round ${state.curIdx + 1}/${state.maxRounds}) ${isDouble ? '🔥 2X BONUS' : ''}`;
     tag.style.color = isDouble ? "#ffcc00" : "var(--highlight)";
@@ -238,12 +255,6 @@ function nextRound() {
         <div style="color:var(--p4); font-weight:bold; text-transform:uppercase;">${subText}</div>
         ${state.isHost ? `<div id="host-lock-status" style="color:var(--brand); font-size:1.3rem; font-weight:bold; margin-top:20px;">LOCKED IN: 0 / ${state.numPlayers}</div>` : ''}
     `;
-
-    if (state.isHost) {
-        db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'input', type: q.type, qData: q, isDouble: isDouble });
-    } else if (state.numPlayers === 1) {
-        renderSoloUI(q);
-    }
 
     state.timeLeft = state.timeLimit;
     document.getElementById('timer').innerText = state.timeLeft;
@@ -277,7 +288,7 @@ export function renderClientUI(hostState) {
 
     if (hostState.phase === 'loading') {
         if(promptDiv) { promptDiv.innerText = ""; promptDiv.classList.add('hidden'); }
-        container.innerHTML = `<div style="font-size:1.5rem; color:var(--brand); font-weight:bold; margin-top:40px;">Generating AI Questions...<br><span style="font-size:1rem; color:var(--text-muted);">Get ready!</span></div>`;
+        container.innerHTML = `<div style="font-size:1.5rem; color:var(--brand); font-weight:bold; margin-top:40px;">Loading Prompts...<br><span style="font-size:1rem; color:var(--text-muted);">Get ready!</span></div>`;
         return;
     }
 
