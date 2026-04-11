@@ -16,8 +16,7 @@ export function handleHostSetup() {
     document.getElementById('start-btn-top').onclick = createRoom;
     document.getElementById('daily-btn-top').parentElement.classList.add('hidden'); 
     
-    document.getElementById('players-rounds-area').classList.add('hidden'); 
-    
+     
     document.getElementById('cancel-setup-btn').classList.remove('hidden');
     document.getElementById('stats-btn').classList.add('hidden');
     state.isMultiplayer = true;
