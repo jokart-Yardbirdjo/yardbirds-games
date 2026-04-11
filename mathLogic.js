@@ -107,7 +107,11 @@ export function startGame() {
 
     // ADD THIS LINE to render the score pill immediately in Solo Mode
     if (!state.isHost) {
-        document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:var(--border)"><div class="p-name">SCORE</div><div class="p-pts">0</div><div class="p-streak" style="opacity:0">🔥 0</div></div>`;
+        document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]};">
+            <div class="p-name" style="color:${colors[0]}">SCORE</div>
+            <div class="p-pts" style="color:#fff">0</div>
+            <div class="p-streak" style="opacity:0">🔥 0</div>
+        </div>`;
     }
     
     nextRound();
