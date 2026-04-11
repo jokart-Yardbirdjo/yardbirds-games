@@ -151,6 +151,8 @@ async function loadOfflineQuestions(allowedTypes) {
 function launchGameUI() {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('play-screen').classList.remove('hidden');
+    
+    document.querySelectorAll('.header-btn').forEach(btn => btn.classList.add('hidden'));
     document.getElementById('guess-fields').classList.add('hidden');
     document.getElementById('btn-container').classList.add('hidden');
     document.getElementById('reveal-art').style.display = 'none';
@@ -374,7 +376,8 @@ export function evaluateSoloGuess(source) {
         else if (diff <= q.answer * 0.1) roundPts = 200 * mult; 
         else if (diff <= q.answer * 0.25) roundPts = 100 * mult; 
         
-        fb = `Actual Answer: <strong style="color:var(--brand)">${q.answer}</strong> (You guessed ${state.soloGuess || 0})`;
+        const guessDisplay = state.soloGuess ? state.soloGuess : "Time's Up";
+        fb = `Actual Answer: <strong style="color:var(--brand)">${q.answer}</strong> (You guessed ${guessDisplay})`;
     }
 
     if (roundPts > 0) {
@@ -386,7 +389,7 @@ export function evaluateSoloGuess(source) {
     } else {
         state.streaks[0] = 0;
         sfxBuzzer.play().catch(()=>{});
-        document.getElementById('feedback').innerHTML = `<div style="color:var(--fail); font-size:1.5rem; font-weight:bold;">❌ 0 POINTS</div><div style="font-size:1.1rem; margin-top:10px;">${fb}</div>`;
+        document.getElementById('feedback').innerHTML = `<div style="color:var(--fail); font-size:1.5rem; font-weight:bold; margin-bottom:5px;">❌ INCORRECT</div><div style="font-size:1.1rem; margin-top:10px;">${fb}</div>`;
     }
 
     document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]}"><div class="p-name">SCORE</div><div class="p-pts">${state.rawScores[0]}</div><div class="p-streak">🔥 ${state.streaks[0]}</div></div>`;
