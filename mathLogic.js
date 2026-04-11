@@ -322,7 +322,8 @@ function endGameSequence() {
             db.ref(`rooms/${state.roomCode}/state`).set('finished');
         });
     } else {
-        document.getElementById('winner-text').innerText = `Game Over! Final Score: ${state.rawScores[0]}`;
+        document.getElementById('winner-text').innerText = `🏆 Final Score: ${state.rawScores[0]} Pts`;
+        document.getElementById('winner-text').style.color = colors[0];
         document.getElementById('final-grid').innerHTML = "";
     }
    
