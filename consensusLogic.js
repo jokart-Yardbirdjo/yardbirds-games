@@ -152,7 +152,6 @@ function launchGameUI() {
     document.getElementById('btn-container').classList.add('hidden');
     document.getElementById('reveal-art').style.display = 'none';
 
-    // FIX #3: Hide initial scores for the Host TV so it's completely clean
     if (state.isHost) {
         document.getElementById('score-board').innerHTML = '';
     } else {
@@ -173,13 +172,17 @@ function nextRound() {
     
     if (state.isHost) {
         document.getElementById('score-board').innerHTML = ''; // Keep clean during prompts
+        
+        // FIX #1: Update current round in Firebase so phones sync!
+        db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
+        
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             if(snap.exists()) {
                 let updates = {};
                 snap.forEach(p => { 
                     updates[`${p.key}/guess1`] = null; 
                     updates[`${p.key}/guess2`] = null; 
-                    updates[`${p.key}/status`] = 'guessing'; // FIX #4: Clear locks
+                    updates[`${p.key}/status`] = 'guessing'; 
                 });
                 db.ref(`rooms/${state.roomCode}/players`).update(updates);
             }
@@ -245,7 +248,6 @@ export function renderClientUI(hostState) {
     let html = "";
     const q = hostState.qData;
     
-    // FIX #6: Render prompt on phone directly
     if(promptDiv && q) {
         promptDiv.innerText = q.prompt;
         promptDiv.classList.remove('hidden');
@@ -309,11 +311,11 @@ window.submitConsensusGuess = (payload, optionalVal) => {
     if (typeof payload === 'object') {
         if (!payload.guess1 && payload.guess1 !== false && payload.guess1 !== 0) return alert("Please select an option for Part 1!");
         if (!payload.guess2 && payload.guess2 !== false && payload.guess2 !== 0) return alert("Please enter a prediction for Part 2!");
-        payload.status = 'locked'; // FIX #4: Push lock status so TV knows
+        payload.status = 'locked'; 
         db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update(payload);
     } else {
         if (!optionalVal && optionalVal !== 0) return alert("Please enter a value!");
-        db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update({ [payload]: optionalVal, status: 'locked' }); // FIX #4
+        db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update({ [payload]: optionalVal, status: 'locked' }); 
     }
     document.getElementById('client-consensus-ui').innerHTML = `<h2 style="color:var(--success); font-size:2.5rem; margin-top:30px;">Locked In!</h2><p style="color:var(--text-muted);">Look at the TV.</p>`;
 };
@@ -473,7 +475,6 @@ export function evaluateMultiplayerRound(players) {
 
     document.getElementById('feedback').innerHTML = fbHTML + `</div>`;
     
-    // FIX #3: Only show the score pills during the Reveal phase!
     document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
         <div class="score-pill" style="border-color:${colors[i % colors.length]};">
             <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
@@ -497,7 +498,6 @@ function endGameSequence() {
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             const players = snap.val();
             let results = Object.keys(players).map((pid, idx) => {
-                // FIX #5: Push Final Scores back to the database for the phones!
                 db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: state.rawScores[idx] });
                 return { name: players[pid].name, score: state.rawScores[idx] };
             });
