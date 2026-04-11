@@ -505,12 +505,18 @@ function nextTrack() {
     } else {
         updateLeaderboard(pIdx); 
         document.documentElement.style.setProperty('--active-vis', currentColor);
-        if(!state.isDailyMode) document.getElementById('main-title').style.color = currentColor;
+        // Remove or comment out this line:
+        // if(!state.isDailyMode) document.getElementById('main-title').style.color = currentColor; 
+        
         const currentRound = Math.floor(state.curIdx / state.numPlayers) + 1;
         tag.innerText = state.numPlayers > 1 ? `PLAYER ${pIdx + 1} TURN (Round ${currentRound}/${state.roundsPerPlayer})` : `Round ${currentRound}/${state.roundsPerPlayer}`;
-        tag.style.color = currentColor; tag.style.borderColor = currentColor;
-        document.getElementById('stop-btn').style.backgroundColor = currentColor; document.getElementById('stop-btn').style.color = "#000";
-        document.getElementById('submit-btn').style.backgroundColor = currentColor; document.getElementById('submit-btn').style.color = "#000";
+        // Standardize tag border to white/highlight and remove button overrides entirely!
+        tag.style.color = "var(--highlight)"; 
+        tag.style.borderColor = "var(--border)";
+        
+        // Reset buttons to CSS defaults
+        document.getElementById('stop-btn').style.cssText = "";
+        document.getElementById('submit-btn').style.cssText = "";
     }
     
     document.getElementById('feedback').innerHTML = ""; document.getElementById('feedback').classList.remove('fade-in');
