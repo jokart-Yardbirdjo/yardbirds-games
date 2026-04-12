@@ -327,7 +327,15 @@ export async function executeFetchLogic() {
                     });
                 } else {
                     searchTerm = genre === 'custom' ? customVal : genre;
-                    if (searchTerm === customVal && customVal.includes(',')) {
+                    
+                    // 👇 1. INJECT THE PLAYLIST INTERCEPTOR HERE 👇
+                    if (genre === 'custom' && customVal.startsWith('http')) {
+                        document.getElementById('feedback-setup').innerText = "Extracting Playlist & Matching Audio (Takes ~10 seconds)...";
+                        pool = await extractPlaylistData(customVal);
+                        apiSearchTerm = ""; // Prevent the default iTunes search from running below
+                    } 
+                    // 👇 2. CHANGE THIS 'if' TO an 'else if' 👇
+                    else if (searchTerm === customVal && customVal.includes(',')) {
                         let terms = customVal.split(',').map(s => s.trim().toLowerCase());
                         let cleanTerms = [];
                         terms.forEach(t => {
@@ -953,4 +961,59 @@ function endGameSequence() {
     saveStats();
 
     if (maxScore > state.globalHighScore && maxScore > 0) { localStorage.setItem('yardbirdHighScore', maxScore); document.getElementById('new-record-msg').style.display = 'block'; }
+}
+
+// Add to the bottom of gameLogic.js
+async function extractPlaylistData(urlInput) {
+    let extractedTracks = [];
+    let validPool = [];
+    
+    // 1. Proxy the Request
+    const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(urlInput)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) throw new Error(`Proxy blocked (HTTP ${response.status})`);
+    const html = await response.text();
+
+    // 2. Scrape Apple Music Data
+    if (urlInput.includes('music.apple.com')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+        let playlistData = null;
+        scripts.forEach(script => {
+            if (script.innerText.includes('MusicPlaylist')) {
+                try { playlistData = JSON.parse(script.innerText); } catch(e) {}
+            }
+        });
+        if (!playlistData || !playlistData.track) throw new Error("Could not find public track data. Ensure playlist is public.");
+        extractedTracks = playlistData.track.map(t => ({ title: t.name, artist: t.byArtist ? t.byArtist.name : "" }));
+    } else {
+        throw new Error("Only Apple Music playlists are currently supported in this mode.");
+    }
+
+    if (extractedTracks.length === 0) throw new Error("No tracks extracted from the playlist.");
+
+    // 3. Cross-Reference with iTunes (Limit to 40 tracks to prevent rate-limiting)
+    const tracksToProcess = extractedTracks.slice(0, 40);
+    const searchPromises = tracksToProcess.map(async (track) => {
+        let cleanTitle = track.title.replace(/\(Official.*?\)/gi, '').replace(/\[Official.*?\]/gi, '').trim();
+        const query = encodeURIComponent(`${cleanTitle} ${track.artist}`);
+        try {
+            const res = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0 && data.results[0].previewUrl) {
+                return data.results[0]; // Return the raw iTunes object our game expects
+            }
+        } catch (e) {
+            console.warn("iTunes match failed for:", track.title);
+        }
+        return null;
+    });
+
+    const resolvedTracks = await Promise.all(searchPromises);
+    validPool = resolvedTracks.filter(track => track !== null);
+
+    if (validPool.length < 3) throw new Error("Could not find enough playable audio files for this playlist.");
+    
+    return validPool; // Handoff back to the main game loop!
 }
