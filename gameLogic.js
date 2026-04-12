@@ -985,7 +985,19 @@ async function extractPlaylistData(urlInput) {
             }
         });
         if (!playlistData || !playlistData.track) throw new Error("Could not find public track data. Ensure playlist is public.");
-        extractedTracks = playlistData.track.map(t => ({ title: t.name, artist: t.byArtist ? t.byArtist.name : "" }));
+        
+        // 👇 THE FIX: Safely parse the artist whether it's an object or an array 👇
+        extractedTracks = playlistData.track.map(t => {
+            let artistName = "";
+            if (t.byArtist) {
+                if (Array.isArray(t.byArtist) && t.byArtist.length > 0) {
+                    artistName = t.byArtist[0].name;
+                } else {
+                    artistName = t.byArtist.name || "";
+                }
+            }
+            return { title: t.name, artist: artistName };
+        });
     } else {
         throw new Error("Only Apple Music playlists are currently supported in this mode.");
     }
@@ -996,7 +1008,10 @@ async function extractPlaylistData(urlInput) {
     const tracksToProcess = extractedTracks.slice(0, 40);
     const searchPromises = tracksToProcess.map(async (track) => {
         let cleanTitle = track.title.replace(/\(Official.*?\)/gi, '').replace(/\[Official.*?\]/gi, '').trim();
-        const query = encodeURIComponent(`${cleanTitle} ${track.artist}`);
+        
+        // Combine title and artist for a highly accurate iTunes search
+        const query = encodeURIComponent(`${cleanTitle} ${track.artist}`.trim());
+        
         try {
             const res = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
             const data = await res.json();
@@ -1014,5 +1029,5 @@ async function extractPlaylistData(urlInput) {
 
     if (validPool.length < 3) throw new Error("Could not find enough playable audio files for this playlist.");
     
-    return validPool; // Handoff back to the main game loop!
+    return validPool; 
 }
