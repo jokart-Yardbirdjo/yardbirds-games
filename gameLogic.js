@@ -202,12 +202,19 @@ export async function executeFetchLogic() {
     
     try {
         let pool = []; let searchTerm = ""; let minYear = 1900, maxYear = 2099;
-        const customVal = document.getElementById('custom-input').value;
+        const customVal = document.getElementById('custom-input').value.trim(); // Added .trim() for safety against accidental spaces
         const seenTracks = new Set(); const artistCount = {}; 
         let hitLimit = state.gameState.level === 'easy' ? 15 : 150; 
         
-        if (state.gameState.mode === 'movie') {
+        // 👇 NEW GLOBAL PLAYLIST INTERCEPTOR 👇
+        if (state.gameState.sub === 'custom' && customVal.startsWith('http')) {
+            document.getElementById('feedback-setup').innerText = "Extracting Playlist & Matching Audio (Takes ~10 seconds)...";
+            pool = await extractPlaylistData(customVal);
+        } 
+        // 👇 WRAP THE EXISTING LOGIC IN AN 'ELSE IF' 👇
+        else if (state.gameState.mode === 'movie') {
             let selectedMovieGenre = state.gameState.sub;
+            
             if (selectedMovieGenre === 'Disney Classics' || selectedMovieGenre === 'Bollywood Hits' || selectedMovieGenre === 'Tamil Cinema' || selectedMovieGenre === 'Hollywood Blockbusters') {
                 
                 let jsonFile = ''; let vaultName = '';
@@ -327,15 +334,7 @@ export async function executeFetchLogic() {
                     });
                 } else {
                     searchTerm = genre === 'custom' ? customVal : genre;
-                    
-                    // 👇 1. INJECT THE PLAYLIST INTERCEPTOR HERE 👇
-                    if (genre === 'custom' && customVal.startsWith('http')) {
-                        document.getElementById('feedback-setup').innerText = "Extracting Playlist & Matching Audio (Takes ~10 seconds)...";
-                        pool = await extractPlaylistData(customVal);
-                        apiSearchTerm = ""; // Prevent the default iTunes search from running below
-                    } 
-                    // 👇 2. CHANGE THIS 'if' TO an 'else if' 👇
-                    else if (searchTerm === customVal && customVal.includes(',')) {
+                    if (searchTerm === customVal && customVal.includes(',')) {
                         let terms = customVal.split(',').map(s => s.trim().toLowerCase());
                         let cleanTerms = [];
                         terms.forEach(t => {
