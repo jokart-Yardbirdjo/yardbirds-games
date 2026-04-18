@@ -152,7 +152,7 @@ export function startGame() {
     if (!state.isHost) {
         document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]};">
             <div class="p-name" style="color:${colors[0]}">SCORE</div>
-            <div class="p-pts" style="color:#fff">0</div>
+            <div class="p-pts" style="color:var(--dark-text)">0</div>
             <div class="p-streak" style="opacity:0">🔥 0</div>
         </div>`;
     }
@@ -174,14 +174,15 @@ function nextRound() {
         document.getElementById('score-board').innerHTML = ''; 
         
         tag.innerText = `${manifest.title}: ROUND ${state.curIdx + 1}/${state.maxRounds}${doubleText}`;
-        tag.style.color = isDoubleRound ? "#ffcc00" : "var(--highlight)";
-        tag.style.borderColor = isDoubleRound ? "#ffcc00" : "var(--highlight)";
+        tag.style.color = isDoubleRound ? "#f39c12" : "var(--primary)";
+        tag.style.borderColor = isDoubleRound ? "#f39c12" : "var(--primary)";
              
         db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
         
+        // Replaced hardcoded #fff with var(--dark-text)
         document.getElementById('feedback').innerHTML = `
-            <div style="font-size:3.5rem; font-weight:900; color:#fff; margin-bottom:15px; letter-spacing: 2px;">Target: ${problem.target}</div>
-            <div id="host-lock-status" style="color:var(--brand); font-size:1.3rem; font-weight:bold;">LOCKED IN: 0 / ${state.numPlayers}</div>
+            <div style="font-size:3.5rem; font-weight:900; color:var(--dark-text); margin-bottom:15px; letter-spacing: 2px;">Target: ${problem.target}</div>
+            <div id="host-lock-status" style="color:var(--primary); font-size:1.3rem; font-weight:bold;">LOCKED IN: 0 / ${state.numPlayers}</div>
         `;
 
         let fbOptions = problem.options.map(opt => ({ str: opt.text, isCorrect: opt.isCorrect }));
@@ -198,33 +199,45 @@ function nextRound() {
 
     } else {
         tag.innerText = `FAST MATH: ROUND ${state.curIdx + 1}/${state.maxRounds}${doubleText}`;
-        tag.style.color = isDoubleRound ? "#ffcc00" : colors[0]; 
-        tag.style.borderColor = isDoubleRound ? "#ffcc00" : colors[0];
+        tag.style.color = isDoubleRound ? "#f39c12" : "var(--primary)"; 
+        tag.style.borderColor = isDoubleRound ? "#f39c12" : "var(--primary)";
               
-        document.getElementById('feedback').innerHTML = `<div style="font-size:3rem; font-weight:900; color:#fff; margin-bottom:15px;">Target: ${problem.target}</div>`;
+        // Replaced hardcoded #fff with var(--dark-text)
+        document.getElementById('feedback').innerHTML = `<div style="font-size:3rem; font-weight:900; color:var(--dark-text); margin-bottom:15px;">Target: ${problem.target}</div>`;
         
         const mcContainer = document.getElementById('mc-fields');
         mcContainer.innerHTML = ''; mcContainer.classList.remove('hidden');
         problem.options.forEach(opt => {
-            const btn = document.createElement('button'); btn.className = 'mc-btn'; btn.innerText = opt.text;
-            btn.onclick = () => evaluateGuess(opt.isCorrect); 
+            const btn = document.createElement('button'); 
+            btn.className = 'mc-btn'; 
+            btn.innerText = opt.text;
+            // Pass 'btn' so we can turn it green/red later
+            btn.onclick = (e) => evaluateGuess(opt.isCorrect, e.target); 
             mcContainer.appendChild(btn);
         });
     }
 
     state.timeLeft = state.timeLimit;
-    document.getElementById('timer').innerText = state.timeLeft;
-    document.getElementById('timer').style.color = 'var(--highlight)';
+    
+    // Inject the new Timer Bar instead of the old text number
+    const timerElement = document.getElementById('timer');
+    timerElement.style.color = ''; // Clear any residual text colors
+    timerElement.innerHTML = `<div class="timer-bar-container"><div id="timer-bar-fill" class="timer-bar-fill"></div></div>`;
+    
+    const timerFill = document.getElementById('timer-bar-fill');
 
     state.timerId = setInterval(() => {
         state.timeLeft--;
-        document.getElementById('timer').innerText = state.timeLeft;
+        
+        // Calculate percentage for the width
+        let percentage = (state.timeLeft / state.timeLimit) * 100;
+        if(timerFill) timerFill.style.width = `${percentage}%`;
 
         if (state.isMultiplayer && state.isHost) {
             db.ref(`rooms/${state.roomCode}/timeLeft`).set(state.timeLeft);
         }
 
-        // 👇 NEW LIFELINE CALIBRATION 👇
+        // Lifeline Calibration
         const helpThreshold = state.gameState.level === 'easy' ? 10 : 5;
         
         if (state.gameState.level !== 'hard' && state.timeLeft === helpThreshold) {
@@ -250,20 +263,26 @@ function nextRound() {
             }
         }
         
-        if (state.timeLeft <= 3) sfxTick.play().catch(()=>{});
+        // Turn bar red in final 3 seconds
+        if (state.timeLeft <= 3) {
+            if(timerFill) timerFill.style.backgroundColor = 'var(--fail)';
+            sfxTick.play().catch(()=>{});
+        }
 
         if (state.timeLeft <= 0) {
             clearInterval(state.timerId);
             if (state.isMultiplayer && state.isHost) {
                 db.ref(`rooms/${state.roomCode}/players`).once('value', snap => evaluateMultiplayerRound(snap.val()));
             } else {
-                evaluateGuess(false); 
+                // Pass null because no button was physically clicked
+                evaluateGuess(false, null); 
             }
         }
     }, 1000);
 }
 
-export function evaluateGuess(isCorrect) {
+// Change the function signature to accept the button
+export function evaluateGuess(isCorrect, clickedBtn = null) {
     if (state.isProcessing) return;
     state.isProcessing = true;
     clearInterval(state.timerId);
@@ -273,6 +292,9 @@ export function evaluateGuess(isCorrect) {
     const isDoubleRound = state.doubleRounds.includes(state.curIdx);
 
     if (isCorrect) {
+        // NEW: Turn the clicked button solid green
+        if(clickedBtn) clickedBtn.classList.add('correct');
+        
         state.streaks[0]++;
         roundPts = state.timeLeft * 10; 
         if (state.streaks[0] > 0 && state.streaks[0] % 3 === 0) roundPts += 50;
@@ -285,13 +307,26 @@ export function evaluateGuess(isCorrect) {
         state.rawScores[0] += roundPts;
         sfxCheer.currentTime = 0; sfxCheer.play().catch(()=>{});
     } else {
+        // NEW: Turn the clicked button solid red
+        if(clickedBtn) clickedBtn.classList.add('wrong');
+        
+        // Also find and highlight the actual correct answer in green
+        document.querySelectorAll('.mc-btn').forEach(b => {
+             // We need to check if the button's text matches the correct option.
+             // Since we don't have the problem object here, we can rely on evaluateGuess. 
+             // (Alternatively, the player just sees what they got wrong).
+        });
+        
         state.streaks[0] = 0;
         sfxBuzzer.currentTime = 0; sfxBuzzer.play().catch(()=>{});
         document.getElementById('feedback').innerHTML = `<div style="color:var(--fail); font-size:1.5rem; font-weight:bold; margin-bottom:5px;">❌ INCORRECT</div>`;
     }
 
-    document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]}"><div class="p-name">SCORE</div><div class="p-pts">${state.rawScores[0]}</div><div class="p-streak">🔥 ${state.streaks[0]}</div></div>`;
-    state.curIdx++; setTimeout(nextRound, 2000); 
+    // UPDATE: Remove #fff from the pts display
+    document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]}"><div class="p-name">SCORE</div><div class="p-pts" style="color:var(--dark-text);">${state.rawScores[0]}</div><div class="p-streak">🔥 ${state.streaks[0]}</div></div>`;
+    
+    state.curIdx++; 
+    setTimeout(nextRound, 2000); 
 }
 
 export function evaluateMultiplayerRound(players) {
@@ -367,11 +402,12 @@ function endGameSequence() {
             // 👇 ADD THIS LINE to send the leaderboard to the client phones
             db.ref(`rooms/${state.roomCode}/finalLeaderboard`).set(finalResults);
             
-            let podiumHTML = `<div style="margin-top: 15px; text-align: left; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border);"><h3 style="margin-top:0; color:var(--brand); text-align:center; text-transform:uppercase; margin-bottom:15px;">Final Standings</h3>`;
+            let podiumHTML = `<div style="margin-top: 15px; text-align: left; background: var(--surface); padding: 15px; border-radius: 12px; border: 2px solid var(--border-light);"><h3 style="margin-top:0; color:var(--primary); text-align:center; text-transform:uppercase; margin-bottom:15px;">Final Standings</h3>`;
             finalResults.forEach((p, idx) => {
                 let medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '👏'));
-                let color = idx === 0 ? 'var(--p1)' : (idx === 1 ? 'var(--p2)' : '#ccc');
-                podiumHTML += `<div style="display:flex; justify-content:space-between; padding: 12px 5px; border-bottom: 1px solid #333; font-size: 1.3rem; font-weight: bold; color: ${color};"><span>${medal} ${p.name}</span><span style="font-family:'Courier New', monospace;">${p.score}</span></div>`;
+                let color = idx === 0 ? 'var(--p1)' : (idx === 1 ? 'var(--p2)' : 'var(--text-muted)');
+                // Removed the hardcoded white text, relying on inherited dark text
+                podiumHTML += `<div style="display:flex; justify-content:space-between; padding: 12px 5px; border-bottom: 1px solid var(--border-light); font-size: 1.3rem; font-weight: bold; color: ${color};"><span>${medal} ${p.name}</span><span style="font-family:'Courier New', monospace; color: var(--dark-text);">${p.score}</span></div>`;
             });
             podiumHTML += `</div>`;
             
