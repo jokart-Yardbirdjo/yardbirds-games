@@ -1,72 +1,1132 @@
 {
   "celeb": [
-    { "q": "It's not clocking to you, that I am standing on business.", "a": "Justin Bieber" },
-    { "q": "They're wigs.", "a": "Cardi B" },
-    { "q": "I'm the person the phrase 'watch this' was made for.", "a": "Caitlin Clark" },
-    { "q": "I would like to die on Mars. Just not on impact.", "a": "Elon Musk" },
-    { "q": "Kim, there's people that are dying.", "a": "Kourtney Kardashian" },
-    { "q": "I ain't reading all that. I'm happy for u tho. Or sorry that happened.", "a": "Viral Tweet" },
-    { "q": "That's hot.", "a": "Paris Hilton" },
-    { "q": "Is math related to science?", "a": "Katy Perry" },
-    { "q": "I’m very much a believer in that if you want it, you can get it.", "a": "Zendaya" },
-    { "q": "I’m not a businessman; I’m a business, man.", "a": "Jay-Z" },
-    { "q": "I feel like I’m too busy writing history to read it.", "a": "Kanye West" },
-    { "q": "Power is not given to you. You have to take it.", "a": "Beyoncé" },
-    { "q": "I don't think I'm a star. I'm just a person who works hard.", "a": "Rihanna" },
-    { "q": "Turn your wounds into wisdom.", "a": "Oprah Winfrey" },
-    { "q": "Everything is possible if you just believe.", "a": "Sabrina Carpenter" },
-    { "q": "I don’t care what you think about me. I don’t think about you at all.", "a": "Coco Chanel" },
-    { "q": "I am the greatest, I said that even before I knew I was.", "a": "Muhammad Ali" },
-    { "q": "You miss 100% of the shots you don’t take.", "a": "Wayne Gretzky" },
-    { "q": "I’m a woman. We reserve the right to be pissed off if we don’t get what we want.", "a": "Pink" },
-    { "q": "I don't do fashion. I am fashion.", "a": "Coco Chanel" }
+    {
+      "q": "I'm literally just a girl.",
+      "a": "Gwen Stefani"
+    },
+    {
+      "q": "I would like to be excluded from this narrative.",
+      "a": "Taylor Swift"
+    },
+    {
+      "q": "That's a wrap on me, folks.",
+      "a": "Viral TikTok"
+    },
+    {
+      "q": "I don't need a ride, I need ammunition.",
+      "a": "Volodymyr Zelensky"
+    },
+    {
+      "q": "You're doing amazing, sweetie.",
+      "a": "Kris Jenner"
+    },
+    {
+      "q": "I'm dropping hints that I'm single.",
+      "a": "Viral Audio"
+    },
+    {
+      "q": "We were on a break!",
+      "a": "Ross Geller"
+    },
+    {
+      "q": "I am the moment.",
+      "a": "Wendy Williams"
+    },
+    {
+      "q": "What was the reason?!",
+      "a": "Cardi B"
+    },
+    {
+      "q": "I was rooting for you, we were all rooting for you!",
+      "a": "Tyra Banks"
+    },
+    {
+      "q": "I’m sorry to this man.",
+      "a": "Keke Palmer"
+    },
+    {
+      "q": "I know that's right.",
+      "a": "Saweetie"
+    },
+    {
+      "q": "I'm not saying she deserved it, but I'm saying God's timing is always right.",
+      "a": "Trisha Paytas"
+    },
+    {
+      "q": "I don't know who needs to hear this, but...",
+      "a": "Viral Tweet"
+    },
+    {
+      "q": "The math is not mathing.",
+      "a": "TikTok Culture"
+    },
+    {
+      "q": "Nobody's gonna know. They're gonna know.",
+      "a": "TikTok Audio"
+    },
+    {
+      "q": "Oh no, our table! It's broken!",
+      "a": "Viral Video"
+    },
+    {
+      "q": "It's a beautiful day to leave me alone.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "And I took that personally.",
+      "a": "Michael Jordan"
+    },
+    {
+      "q": "Stop the cap.",
+      "a": "Twitch Culture"
+    },
+    {
+      "q": "I’m the main character.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "Gaslight, gatekeep, girlboss.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I literally do not have the energy for this today.",
+      "a": "Viral Audio"
+    },
+    {
+      "q": "Are you not embarrassed?",
+      "a": "Drake"
+    },
+    {
+      "q": "Rent free.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "Periodt.",
+      "a": "City Girls"
+    },
+    {
+      "q": "We ride at dawn.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I woke up and chose violence.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I don't know her.",
+      "a": "Mariah Carey"
+    },
+    {
+      "q": "Sashay away.",
+      "a": "RuPaul"
+    },
+    {
+      "q": "My money don't jiggle jiggle, it folds.",
+      "a": "Louis Theroux"
+    },
+    {
+      "q": "I'm a savage. Classy, bougie, ratchet.",
+      "a": "Megan Thee Stallion"
+    },
+    {
+      "q": "You are the weakest link. Goodbye.",
+      "a": "Anne Robinson"
+    },
+    {
+      "q": "I love that for you.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "It's the audacity for me.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I feel like that's a me problem.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I'm baby.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "We have food at home.",
+      "a": "Every Mom Ever"
+    },
+    {
+      "q": "Sir, this is a Wendy's.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I'm doing my part!",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "Not today, Satan. Not today.",
+      "a": "Bianca Del Rio"
+    },
+    {
+      "q": "I'm ready, I'm ready, I'm ready!",
+      "a": "SpongeBob SquarePants"
+    },
+    {
+      "q": "Is mayonnaise an instrument?",
+      "a": "Patrick Star"
+    },
+    {
+      "q": "I'm not saying I'm Batman, I'm just saying nobody has ever seen me and Batman in the same room.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I don't know her.",
+      "a": "Mariah Carey"
+    },
+    {
+      "q": "Sashay away.",
+      "a": "RuPaul"
+    },
+    {
+      "q": "My money don't jiggle jiggle, it folds.",
+      "a": "Louis Theroux"
+    },
+    {
+      "q": "I'm a savage. Classy, bougie, ratchet.",
+      "a": "Megan Thee Stallion"
+    },
+    {
+      "q": "You are the weakest link. Goodbye.",
+      "a": "Anne Robinson"
+    },
+    {
+      "q": "I love that for you.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "It's the audacity for me.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I feel like that's a me problem.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I'm baby.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "We have food at home.",
+      "a": "Every Mom Ever"
+    },
+    {
+      "q": "Sir, this is a Wendy's.",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "I'm doing my part!",
+      "a": "Internet Culture"
+    },
+    {
+      "q": "Not today, Satan. Not today.",
+      "a": "Bianca Del Rio"
+    },
+    {
+      "q": "I'm ready, I'm ready, I'm ready!",
+      "a": "SpongeBob SquarePants"
+    },
+    {
+      "q": "Is mayonnaise an instrument?",
+      "a": "Patrick Star"
+    },
+    {
+      "q": "I'm not saying I'm Batman, I'm just saying nobody has ever seen me and Batman in the same room.",
+      "a": "Internet Culture"
+    }
   ],
   "movie": [
-    { "q": "Hell, no, I'm a lazy 50-year-old bougie bitch!!", "a": "Pedro Pascal" },
-    { "q": "Get in loser, we're going shopping.", "a": "Rachel McAdams" },
-    { "q": "What, like it's hard?", "a": "Reese Witherspoon" },
-    { "q": "I love the smell of napalm in the morning.", "a": "Robert Duvall" },
-    { "q": "I'm the king of the world!", "a": "Leonardo DiCaprio" },
-    { "q": "Wakanda Forever!", "a": "Chadwick Boseman" },
-    { "q": "I am Iron Man.", "a": "Robert Downey Jr." },
-    { "q": "Why so serious?", "a": "Heath Ledger" },
-    { "q": "Winter is coming.", "a": "Sean Bean" },
-    { "q": "Bazinga!", "a": "Jim Parsons" },
-    { "q": "I’m the one who knocks!", "a": "Bryan Cranston" },
-    { "q": "Hasta la vista, baby.", "a": "Arnold Schwarzenegger" },
-    { "q": "May the Force be with you.", "a": "Harrison Ford" },
-    { "q": "You talkin' to me?", "a": "Robert De Niro" },
-    { "q": "Houston, we have a problem.", "a": "Tom Hanks" },
-    { "q": "There's no place like home.", "a": "Judy Garland" },
-    { "q": "To infinity and beyond!", "a": "Tim Allen" },
-    { "q": "Life is like a box of chocolates.", "a": "Tom Hanks" },
-    { "q": "I'm going to make him an offer he can't refuse.", "a": "Marlon Brando" },
-    { "q": "Avengers, assemble.", "a": "Chris Evans" },
-    { "q": "Ew, David!", "a": "Annie Murphy" },
-    { "q": "Are you not entertained?!", "a": "Russell Crowe" },
-    { "q": "Just keep swimming.", "a": "Ellen DeGeneres" },
-    { "q": "I'm not a regular mom, I'm a cool mom.", "a": "Amy Poehler" }
+    {
+      "q": "Nobody puts Baby in a corner.",
+      "a": "Patrick Swayze"
+    },
+    {
+      "q": "You can't sit with us!",
+      "a": "Amanda Seyfried"
+    },
+    {
+      "q": "She doesn't even go here!",
+      "a": "Daniel Franzese"
+    },
+    {
+      "q": "I'm having an old friend for dinner.",
+      "a": "Anthony Hopkins"
+    },
+    {
+      "q": "I see dead people.",
+      "a": "Haley Joel Osment"
+    },
+    {
+      "q": "It’s alive! It’s alive!",
+      "a": "Colin Clive"
+    },
+    {
+      "q": "Here's Johnny!",
+      "a": "Jack Nicholson"
+    },
+    {
+      "q": "The first rule of Fight Club is: you do not talk about Fight Club.",
+      "a": "Brad Pitt"
+    },
+    {
+      "q": "You make me want to be a better man.",
+      "a": "Jack Nicholson"
+    },
+    {
+      "q": "As if!",
+      "a": "Alicia Silverstone"
+    },
+    {
+      "q": "You're killing me, Smalls.",
+      "a": "Patrick Renna"
+    },
+    {
+      "q": "Keep the change, ya filthy animal.",
+      "a": "Macaulay Culkin"
+    },
+    {
+      "q": "I'm just a girl, standing in front of a boy, asking him to love her.",
+      "a": "Julia Roberts"
+    },
+    {
+      "q": "My precious.",
+      "a": "Andy Serkis"
+    },
+    {
+      "q": "I drink your milkshake!",
+      "a": "Daniel Day-Lewis"
+    },
+    {
+      "q": "Just when I thought I was out, they pull me back in.",
+      "a": "Al Pacino"
+    },
+    {
+      "q": "I am serious. And don't call me Shirley.",
+      "a": "Leslie Nielsen"
+    },
+    {
+      "q": "There's no crying in baseball!",
+      "a": "Tom Hanks"
+    },
+    {
+      "q": "Fasten your seatbelts. It's going to be a bumpy night.",
+      "a": "Bette Davis"
+    },
+    {
+      "q": "Roads? Where we're going we don't need roads.",
+      "a": "Christopher Lloyd"
+    },
+    {
+      "q": "I'm the captain now.",
+      "a": "Barkhad Abdi"
+    },
+    {
+      "q": "You either die a hero, or you live long enough to see yourself become the villain.",
+      "a": "Aaron Eckhart"
+    },
+    {
+      "q": "Look at me, I'm the captain now.",
+      "a": "Barkhad Abdi"
+    },
+    {
+      "q": "I feel the need... the need for speed.",
+      "a": "Tom Cruise"
+    },
+    {
+      "q": "Say hello to my little friend!",
+      "a": "Al Pacino"
+    },
+    {
+      "q": "I am your father.",
+      "a": "James Earl Jones"
+    },
+    {
+      "q": "Chewie, we're home.",
+      "a": "Harrison Ford"
+    },
+    {
+      "q": "I love you 3000.",
+      "a": "Robert Downey Jr."
+    },
+    {
+      "q": "You complete me.",
+      "a": "Tom Cruise"
+    },
+    {
+      "q": "I wish I knew how to quit you.",
+      "a": "Jake Gyllenhaal"
+    },
+    {
+      "q": "To me, you are perfect.",
+      "a": "Andrew Lincoln"
+    },
+    {
+      "q": "It's a trap!",
+      "a": "Admiral Ackbar"
+    },
+    {
+      "q": "Goonies never say die!",
+      "a": "Sean Astin"
+    },
+    {
+      "q": "By all means, move at a glacial pace. You know how that thrills me.",
+      "a": "Meryl Streep"
+    },
+    {
+      "q": "Florals? For spring? Groundbreaking.",
+      "a": "Meryl Streep"
+    },
+    {
+      "q": "I'm in a glass case of emotion!",
+      "a": "Will Ferrell"
+    },
+    {
+      "q": "If you're a bird, I'm a bird.",
+      "a": "Ryan Gosling"
+    },
+    {
+      "q": "I volunteer as tribute!",
+      "a": "Jennifer Lawrence"
+    },
+    {
+      "q": "Every time a bell rings, an angel gets his wings.",
+      "a": "Karolyn Grimes"
+    },
+    {
+      "q": "You shall not pass!",
+      "a": "Ian McKellen"
+    },
+    {
+      "q": "They may take our lives, but they'll never take our freedom!",
+      "a": "Mel Gibson"
+    },
+    {
+      "q": "Hakuna Matata.",
+      "a": "Timon & Pumbaa"
+    },
+    {
+      "q": "Some people are worth melting for.",
+      "a": "Olaf"
+    },
+    {
+      "q": "You're a wizard, Harry.",
+      "a": "Robbie Coltrane"
+    },
+    {
+      "q": "Dobby is a free elf.",
+      "a": "Dobby"
+    },
+    {
+      "q": "I live my life a quarter mile at a time.",
+      "a": "Vin Diesel"
+    },
+    {
+      "q": "That is America's ass.",
+      "a": "Chris Evans"
+    },
+    {
+      "q": "Some motherf***ers are always trying to ice-skate uphill.",
+      "a": "Wesley Snipes"
+    },
+    {
+      "q": "I’m just Ken.",
+      "a": "Ryan Gosling"
+    },
+    {
+      "q": "Do you want to build a snowman?",
+      "a": "Kristen Bell"
+    },
+    {
+      "q": "Life, uh, finds a way.",
+      "a": "Jeff Goldblum"
+    },
+    {
+      "q": "Clever girl.",
+      "a": "Bob Peck"
+    },
+    {
+      "q": "Welcome to Jurassic Park.",
+      "a": "Richard Attenborough"
+    },
+    {
+      "q": "You had me at 'hello'.",
+      "a": "Renée Zellweger"
+    },
+    {
+      "q": "There is no spoon.",
+      "a": "Keanu Reeves"
+    },
+    {
+      "q": "I know kung fu.",
+      "a": "Keanu Reeves"
+    },
+    {
+      "q": "I will look for you, I will find you, and I will kill you.",
+      "a": "Liam Neeson"
+    },
+    {
+      "q": "The cold never bothered me anyway.",
+      "a": "Idina Menzel"
+    },
+    {
+      "q": "On Wednesdays we wear pink.",
+      "a": "Rachel McAdams"
+    },
+    {
+      "q": "That's so fetch.",
+      "a": "Lacey Chabert"
+    },
+    {
+      "q": "I am a golden god!",
+      "a": "Billy Crudup"
+    },
+    {
+      "q": "I can do this all day.",
+      "a": "Chris Evans"
+    },
+    {
+      "q": "That's my secret, Captain: I'm always angry.",
+      "a": "Mark Ruffalo"
+    },
+    {
+      "q": "Puny god.",
+      "a": "Tom Hiddleston"
+    },
+    {
+      "q": "I am inevitable.",
+      "a": "Josh Brolin"
+    },
+    {
+      "q": "Why did it have to be snakes?",
+      "a": "Harrison Ford"
+    },
+    {
+      "q": "I am Groot.",
+      "a": "Vin Diesel"
+    },
+    {
+      "q": "I'll have what she's having.",
+      "a": "Estelle Reiner"
+    },
+    {
+      "q": "You're gonna need a bigger boat.",
+      "a": "Roy Scheider"
+    },
+    {
+      "q": "I'm walking here! I'm walking here!",
+      "a": "Dustin Hoffman"
+    },
+    {
+      "q": "E.T. phone home.",
+      "a": "Pat Welsh"
+    },
+    {
+      "q": "Toto, I've a feeling we're not in Kansas anymore.",
+      "a": "Judy Garland"
+    },
+    {
+      "q": "It's a bold strategy Cotton, let's see if it pays off for 'em.",
+      "a": "Jason Bateman"
+    },
+    {
+      "q": "Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.",
+      "a": "Matthew Broderick"
+    },
+    {
+      "q": "Nobody makes me bleed my own blood.",
+      "a": "Ben Stiller"
+    },
+    {
+      "q": "I am McLovin.",
+      "a": "Christopher Mintz-Plasse"
+    },
+    {
+      "q": "I love lamp.",
+      "a": "Steve Carell"
+    },
+    {
+      "q": "By Grabthar's hammer, what a savings.",
+      "a": "Alan Rickman"
+    },
+    {
+      "q": "May the odds be ever in your favor.",
+      "a": "Elizabeth Banks"
+    },
+    {
+      "q": "Do you want to play a game?",
+      "a": "Tobin Bell"
+    },
+    {
+      "q": "We're in the endgame now.",
+      "a": "Benedict Cumberbatch"
+    },
+    {
+      "q": "This is the skin of a killer, Bella.",
+      "a": "Robert Pattinson"
+    },
+    {
+      "q": "I'm the juggernaut, b*tch!",
+      "a": "Vinnie Jones"
+    },
+    {
+      "q": "I am a golden god!",
+      "a": "Billy Crudup"
+    },
+    {
+      "q": "You sit on a throne of lies.",
+      "a": "Will Ferrell"
+    },
+    {
+      "q": "Bye Buddy, hope you find your dad.",
+      "a": "Mr. Narwhal"
+    },
+    {
+      "q": "You'll shoot your eye out, kid.",
+      "a": "Santa Claus (A Christmas Story)"
+    },
+    {
+      "q": "Merry Christmas, shitter was full!",
+      "a": "Randy Quaid"
+    },
+    {
+      "q": "I’m going to steal the Declaration of Independence.",
+      "a": "Nicolas Cage"
+    },
+    {
+      "q": "Hold onto your butts.",
+      "a": "Samuel L. Jackson"
+    },
+    {
+      "q": "I'm too old for this sh*t.",
+      "a": "Danny Glover"
+    },
+    {
+      "q": "Yippee-ki-yay, motherf***er.",
+      "a": "Bruce Willis"
+    },
+    {
+      "q": "You are a sad, strange little man.",
+      "a": "Tim Allen"
+    },
+    {
+      "q": "To infinity and beyond!",
+      "a": "Tim Allen"
+    },
+    {
+      "q": "There is a snake in my boot.",
+      "a": "Tom Hanks"
+    },
+    {
+      "q": "Some men just want to watch the world burn.",
+      "a": "Michael Caine"
+    },
+    {
+      "q": "Why do we fall, sir? So that we can learn to pick ourselves up.",
+      "a": "Michael Caine"
+    },
+    {
+      "q": "It's a bold strategy Cotton, let's see if it pays off for 'em.",
+      "a": "Jason Bateman"
+    },
+    {
+      "q": "Life moves pretty fast. If you don't stop and look around once in a while, you could miss it.",
+      "a": "Matthew Broderick"
+    },
+    {
+      "q": "Nobody makes me bleed my own blood.",
+      "a": "Ben Stiller"
+    },
+    {
+      "q": "I am McLovin.",
+      "a": "Christopher Mintz-Plasse"
+    },
+    {
+      "q": "I love lamp.",
+      "a": "Steve Carell"
+    },
+    {
+      "q": "By Grabthar's hammer, what a savings.",
+      "a": "Alan Rickman"
+    },
+    {
+      "q": "May the odds be ever in your favor.",
+      "a": "Elizabeth Banks"
+    },
+    {
+      "q": "Do you want to play a game?",
+      "a": "Tobin Bell"
+    },
+    {
+      "q": "We're in the endgame now.",
+      "a": "Benedict Cumberbatch"
+    },
+    {
+      "q": "This is the skin of a killer, Bella.",
+      "a": "Robert Pattinson"
+    },
+    {
+      "q": "I'm the juggernaut, b*tch!",
+      "a": "Vinnie Jones"
+    },
+    {
+      "q": "I am a golden god!",
+      "a": "Billy Crudup"
+    },
+    {
+      "q": "You sit on a throne of lies.",
+      "a": "Will Ferrell"
+    },
+    {
+      "q": "Bye Buddy, hope you find your dad.",
+      "a": "Mr. Narwhal"
+    },
+    {
+      "q": "You'll shoot your eye out, kid.",
+      "a": "Santa Claus (A Christmas Story)"
+    },
+    {
+      "q": "Merry Christmas, shitter was full!",
+      "a": "Randy Quaid"
+    },
+    {
+      "q": "I’m going to steal the Declaration of Independence.",
+      "a": "Nicolas Cage"
+    },
+    {
+      "q": "Hold onto your butts.",
+      "a": "Samuel L. Jackson"
+    },
+    {
+      "q": "I'm too old for this sh*t.",
+      "a": "Danny Glover"
+    },
+    {
+      "q": "Yippee-ki-yay, motherf***er.",
+      "a": "Bruce Willis"
+    },
+    {
+      "q": "You are a sad, strange little man.",
+      "a": "Tim Allen"
+    },
+    {
+      "q": "To infinity and beyond!",
+      "a": "Tim Allen"
+    },
+    {
+      "q": "There is a snake in my boot.",
+      "a": "Tom Hanks"
+    },
+    {
+      "q": "Some men just want to watch the world burn.",
+      "a": "Michael Caine"
+    },
+    {
+      "q": "Why do we fall, sir? So that we can learn to pick ourselves up.",
+      "a": "Michael Caine"
+    }
   ],
   "text": [
-    { "q": "It was the best of times, it was the worst of times.", "a": "Charles Dickens" },
-    { "q": "I’m a nightmare dressed like a daydream.", "a": "Taylor Swift" },
-    { "q": "Not all those who wander are lost.", "a": "J.R.R. Tolkien" },
-    { "q": "Call me Ishmael.", "a": "Herman Melville" },
-    { "q": "We accept the love we think we deserve.", "a": "Stephen Chbosky" },
-    { "q": "It's me, hi, I'm the problem, it's me.", "a": "Taylor Swift" },
-    { "q": "Started from the bottom, now we're here.", "a": "Drake" },
-    { "q": "Thank u, next.", "a": "Ariana Grande" },
-    { "q": "Watermelon sugar high.", "a": "Harry Styles" },
-    { "q": "I came in like a wrecking ball.", "a": "Miley Cyrus" },
-    { "q": "All you need is love.", "a": "The Beatles" },
-    { "q": "To be, or not to be, that is the question.", "a": "William Shakespeare" },
-    { "q": "I am the master of my fate, I am the captain of my soul.", "a": "William Ernest Henley" },
-    { "q": "Some infinities are bigger than other infinities.", "a": "John Green" },
-    { "q": "Two roads diverged in a wood, and I— I took the one less traveled by.", "a": "Robert Frost" },
-    { "q": "So it goes.", "a": "Kurt Vonnegut" },
-    { "q": "Please sir, I want some more.", "a": "Charles Dickens" },
-    { "q": "I stay out too late, got nothing in my brain.", "a": "Taylor Swift" },
-    { "q": "I'm a survivor, I'm not gon' give up.", "a": "Destiny's Child" },
-    { "q": "Work hard in silence, let your success be your noise.", "a": "Frank Ocean" }
+    {
+      "q": "It does not do to dwell on dreams and forget to live.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "I solemnly swear that I am up to no good.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "Words are, in my not-so-humble opinion, our most inexhaustible source of magic.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "The boy who lived.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "Whatever our souls are made of, his and mine are the same.",
+      "a": "Emily Brontë"
+    },
+    {
+      "q": "I have been thinking about you constantly since I left you.",
+      "a": "Jane Austen"
+    },
+    {
+      "q": "You pierce my soul. I am half agony, half hope.",
+      "a": "Jane Austen"
+    },
+    {
+      "q": "There is no greater agony than bearing an untold story inside you.",
+      "a": "Maya Angelou"
+    },
+    {
+      "q": "I took a deep breath and listened to the old brag of my heart. I am, I am, I am.",
+      "a": "Sylvia Plath"
+    },
+    {
+      "q": "We are all in the gutter, but some of us are looking at the stars.",
+      "a": "Oscar Wilde"
+    },
+    {
+      "q": "The only way out of the labyrinth of suffering is to forgive.",
+      "a": "John Green"
+    },
+    {
+      "q": "I fell in love the way you fall asleep: slowly, and then all at once.",
+      "a": "John Green"
+    },
+    {
+      "q": "Stay gold, Ponyboy.",
+      "a": "S.E. Hinton"
+    },
+    {
+      "q": "Tomorrow is always fresh, with no mistakes in it yet.",
+      "a": "L.M. Montgomery"
+    },
+    {
+      "q": "And so we beat on, boats against the current, borne back ceaselessly into the past.",
+      "a": "F. Scott Fitzgerald"
+    },
+    {
+      "q": "I hope she'll be a fool—that's the best thing a girl can be in this world, a beautiful little fool.",
+      "a": "F. Scott Fitzgerald"
+    },
+    {
+      "q": "There are years that ask questions and years that answer.",
+      "a": "Zora Neale Hurston"
+    },
+    {
+      "q": "I am no bird; and no net ensnares me.",
+      "a": "Charlotte Brontë"
+    },
+    {
+      "q": "Reader, I married him.",
+      "a": "Charlotte Brontë"
+    },
+    {
+      "q": "It matters not what someone is born, but what they grow to be.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "Do not pity the dead, Harry. Pity the living.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "Once you learn to read, you will be forever free.",
+      "a": "Frederick Douglass"
+    },
+    {
+      "q": "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.",
+      "a": "John Milton"
+    },
+    {
+      "q": "All we have to decide is what to do with the time that is given us.",
+      "a": "J.R.R. Tolkien"
+    },
+    {
+      "q": "There is some good in this world, and it's worth fighting for.",
+      "a": "J.R.R. Tolkien"
+    },
+    {
+      "q": "I must not fear. Fear is the mind-killer.",
+      "a": "Frank Herbert"
+    },
+    {
+      "q": "The spice must flow.",
+      "a": "Frank Herbert"
+    },
+    {
+      "q": "It was a bright cold day in April, and the clocks were striking thirteen.",
+      "a": "George Orwell"
+    },
+    {
+      "q": "Big Brother is watching you.",
+      "a": "George Orwell"
+    },
+    {
+      "q": "All animals are equal, but some animals are more equal than others.",
+      "a": "George Orwell"
+    },
+    {
+      "q": "Shoot all the bluejays you want, if you can hit 'em, but remember it's a sin to kill a mockingbird.",
+      "a": "Harper Lee"
+    },
+    {
+      "q": "You never really understand a person until you consider things from his point of view.",
+      "a": "Harper Lee"
+    },
+    {
+      "q": "I know why the caged bird sings.",
+      "a": "Maya Angelou"
+    },
+    {
+      "q": "The reports of my death have been greatly exaggerated.",
+      "a": "Mark Twain"
+    },
+    {
+      "q": "If you tell the truth, you don't have to remember anything.",
+      "a": "Mark Twain"
+    },
+    {
+      "q": "I have not failed. I've just found 10,000 ways that won't work.",
+      "a": "Thomas Edison"
+    },
+    {
+      "q": "Hello, it's me.",
+      "a": "Adele"
+    },
+    {
+      "q": "I will always love you.",
+      "a": "Whitney Houston"
+    },
+    {
+      "q": "Don't stop believin'.",
+      "a": "Journey"
+    },
+    {
+      "q": "We are the champions, my friends.",
+      "a": "Queen"
+    },
+    {
+      "q": "Is this the real life? Is this just fantasy?",
+      "a": "Queen"
+    },
+    {
+      "q": "Smells like teen spirit.",
+      "a": "Nirvana"
+    },
+    {
+      "q": "Two households, both alike in dignity.",
+      "a": "William Shakespeare"
+    },
+    {
+      "q": "All the world's a stage.",
+      "a": "William Shakespeare"
+    },
+    {
+      "q": "Once upon a midnight dreary, while I pondered, weak and weary.",
+      "a": "Edgar Allan Poe"
+    },
+    {
+      "q": "Quoth the Raven 'Nevermore'.",
+      "a": "Edgar Allan Poe"
+    },
+    {
+      "q": "I wandered lonely as a cloud.",
+      "a": "William Wordsworth"
+    },
+    {
+      "q": "The woods are lovely, dark and deep, but I have promises to keep.",
+      "a": "Robert Frost"
+    },
+    {
+      "q": "Because I could not stop for Death – He kindly stopped for me.",
+      "a": "Emily Dickinson"
+    },
+    {
+      "q": "Do not go gentle into that good night.",
+      "a": "Dylan Thomas"
+    },
+    {
+      "q": "Hope is the thing with feathers.",
+      "a": "Emily Dickinson"
+    },
+    {
+      "q": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+      "a": "Jane Austen"
+    },
+    {
+      "q": "All children, except one, grow up.",
+      "a": "J.M. Barrie"
+    },
+    {
+      "q": "In a hole in the ground there lived a hobbit.",
+      "a": "J.R.R. Tolkien"
+    },
+    {
+      "q": "The man in black fled across the desert, and the gunslinger followed.",
+      "a": "Stephen King"
+    },
+    {
+      "q": "Mr. and Mrs. Dursley of number four, Privet Drive, were proud to say that they were perfectly normal, thank you very much.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "It was a pleasure to burn.",
+      "a": "Ray Bradbury"
+    },
+    {
+      "q": "I am an invisible man.",
+      "a": "Ralph Ellison"
+    },
+    {
+      "q": "Happy families are all alike; every unhappy family is unhappy in its own way.",
+      "a": "Leo Tolstoy"
+    },
+    {
+      "q": "Whether I shall turn out to be the hero of my own life, or whether that station will be held by anybody else, these pages must show.",
+      "a": "Charles Dickens"
+    },
+    {
+      "q": "You don't know about me without you have read a book by the name of The Adventures of Tom Sawyer.",
+      "a": "Mark Twain"
+    },
+    {
+      "q": "You better work, b*tch.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "Oops!... I did it again.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "Hit me baby one more time.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "I kissed a girl and I liked it.",
+      "a": "Katy Perry"
+    },
+    {
+      "q": "Because you're mine, I walk the line.",
+      "a": "Johnny Cash"
+    },
+    {
+      "q": "I walk a lonely road, the only one that I have ever known.",
+      "a": "Green Day"
+    },
+    {
+      "q": "Now you're just somebody that I used to know.",
+      "a": "Gotye"
+    },
+    {
+      "q": "I'm gonna pop some tags, only got twenty dollars in my pocket.",
+      "a": "Macklemore"
+    },
+    {
+      "q": "I came to dance, dance, dance, dance.",
+      "a": "Taio Cruz"
+    },
+    {
+      "q": "Shawty had them apple bottom jeans, boots with the fur.",
+      "a": "T-Pain"
+    },
+    {
+      "q": "To the window, to the wall!",
+      "a": "Lil Jon"
+    },
+    {
+      "q": "I want it that way.",
+      "a": "Backstreet Boys"
+    },
+    {
+      "q": "Bye bye bye.",
+      "a": "NSYNC"
+    },
+    {
+      "q": "If you wanna be my lover, you gotta get with my friends.",
+      "a": "Spice Girls"
+    },
+    {
+      "q": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+      "a": "Jane Austen"
+    },
+    {
+      "q": "All children, except one, grow up.",
+      "a": "J.M. Barrie"
+    },
+    {
+      "q": "In a hole in the ground there lived a hobbit.",
+      "a": "J.R.R. Tolkien"
+    },
+    {
+      "q": "The man in black fled across the desert, and the gunslinger followed.",
+      "a": "Stephen King"
+    },
+    {
+      "q": "Mr. and Mrs. Dursley of number four, Privet Drive, were proud to say that they were perfectly normal, thank you very much.",
+      "a": "J.K. Rowling"
+    },
+    {
+      "q": "It was a pleasure to burn.",
+      "a": "Ray Bradbury"
+    },
+    {
+      "q": "I am an invisible man.",
+      "a": "Ralph Ellison"
+    },
+    {
+      "q": "Happy families are all alike; every unhappy family is unhappy in its own way.",
+      "a": "Leo Tolstoy"
+    },
+    {
+      "q": "Whether I shall turn out to be the hero of my own life, or whether that station will be held by anybody else, these pages must show.",
+      "a": "Charles Dickens"
+    },
+    {
+      "q": "You don't know about me without you have read a book by the name of The Adventures of Tom Sawyer.",
+      "a": "Mark Twain"
+    },
+    {
+      "q": "You better work, b*tch.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "Oops!... I did it again.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "Hit me baby one more time.",
+      "a": "Britney Spears"
+    },
+    {
+      "q": "I kissed a girl and I liked it.",
+      "a": "Katy Perry"
+    },
+    {
+      "q": "Because you're mine, I walk the line.",
+      "a": "Johnny Cash"
+    },
+    {
+      "q": "I walk a lonely road, the only one that I have ever known.",
+      "a": "Green Day"
+    },
+    {
+      "q": "Now you're just somebody that I used to know.",
+      "a": "Gotye"
+    },
+    {
+      "q": "I'm gonna pop some tags, only got twenty dollars in my pocket.",
+      "a": "Macklemore"
+    },
+    {
+      "q": "I came to dance, dance, dance, dance.",
+      "a": "Taio Cruz"
+    },
+    {
+      "q": "Shawty had them apple bottom jeans, boots with the fur.",
+      "a": "T-Pain"
+    },
+    {
+      "q": "To the window, to the wall!",
+      "a": "Lil Jon"
+    },
+    {
+      "q": "I want it that way.",
+      "a": "Backstreet Boys"
+    },
+    {
+      "q": "Bye bye bye.",
+      "a": "NSYNC"
+    },
+    {
+      "q": "If you wanna be my lover, you gotta get with my friends.",
+      "a": "Spice Girls"
+    }
   ]
 }
