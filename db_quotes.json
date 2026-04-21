@@ -1,0 +1,18 @@
+{
+  "celeb": [
+    { "q": "It's not clocking to you, that I am standing on business.", "a": "Justin Bieber" },
+    { "q": "They're wigs.", "a": "Cardi B" },
+    { "q": "I'm the person the phrase 'watch this' was made for.", "a": "Caitlin Clark" },
+    { "q": "I would like to die on Mars. Just not on impact.", "a": "Elon Musk" }
+  ],
+  "movie": [
+    { "q": "Hell, no, I'm a lazy 50-year-old bougie bitch!!", "a": "Pedro Pascal" },
+    { "q": "I love the smell of napalm in the morning.", "a": "Robert Duvall" },
+    { "q": "I'm the king of the world!", "a": "Leonardo DiCaprio" },
+    { "q": "Wakanda Forever!", "a": "Chadwick Boseman" }
+  ],
+  "text": [
+    { "q": "It was the best of times, it was the worst of times.", "a": "Charles Dickens" },
+    { "q": "I’m a nightmare dressed like a daydream.", "a": "Taylor Swift" }
+  ]
+}
