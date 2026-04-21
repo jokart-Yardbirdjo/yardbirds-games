@@ -126,6 +126,14 @@ function nextRound() {
         tag.style.color = "var(--primary)"; tag.style.borderColor = "var(--primary)";
               
         document.getElementById('feedback').innerHTML = `<div class="prompt-text" style="font-style:italic; font-size: 2rem;">"${currentData.q}"</div>`;
+
+        // 👇 ADD THIS TEXT-TO-SPEECH BLOCK 👇
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); 
+            const msg = new SpeechSynthesisUtterance(currentData.q);
+            msg.rate = 0.95;  
+            window.speechSynthesis.speak(msg);
+        }
         
         const mcContainer = document.getElementById('mc-fields');
         mcContainer.innerHTML = ''; mcContainer.classList.remove('hidden');
@@ -240,6 +248,7 @@ function endGameSequence() {
     document.getElementById('play-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
     document.getElementById('final-subtitle').innerText = "Scores Normalized to 1000";
+    document.querySelector('.playlist-box').style.display = 'none';
     
     const maxRawPossible = state.maxRounds * 250; 
     const normalizedScores = state.rawScores.map(s => Math.min(1000, Math.round((s / maxRawPossible) * 1000)));
