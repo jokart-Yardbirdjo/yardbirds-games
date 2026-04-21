@@ -279,6 +279,27 @@ export function openStatsLocker() {
             </div>
         `;
     }
+    // Inside openStatsLocker() in ui.js
+    else if (context === 'who_said_it') {
+        const wsi = stats.who_said_it || {};
+        modalContent.innerHTML = `
+            <h2 style="color:var(--brand); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:15px;">Who Said It Locker</h2>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div>
+                    <div class="stat-val">${wsi.gamesPlayed || 0}</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">High Score</div>
+                    <div class="stat-val" style="color:var(--p1)">${wsi.highScore || 0}</div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">Close</button>
+                <button class="btn btn-reset" onclick="if(window.activeCartridge && window.activeCartridge.resetStats) { window.activeCartridge.resetStats(); }" style="margin-top: 0; padding: 16px;">Reset</button>
+            </div>
+        `;
+    }
 
     if (window.showModal) window.showModal('stats-modal');
     else document.getElementById('stats-modal').classList.remove('hidden');
@@ -324,6 +345,14 @@ export function updatePlatformUI(context) {
     else if (context === 'song_trivia') {
         rulesContent.innerHTML = `<h2>How to Play</h2><ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;"><li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li><li><strong>Today Three:</strong> A daily synced challenge.</li><li><strong>The Lifeline:</strong> Multiple Choice options drop at 10s.</li></ul><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it! Let's Play</button>`;
     }
+    // Inside updatePlatformUI() in ui.js
+    else if (context === 'who_said_it') {
+        rulesContent.innerHTML = `
+            <h2>Who Said It?</h2>
+            <p style="color:#ccc; line-height: 1.6;">Read the quote on the screen and identify who said it as fast as possible. The faster you answer, the more points you earn. <br><br>Get 3 right in a row to ignite a streak bonus!</p>
+            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>
+        `;
+    }   
     // FIX #4: Add detailed game descriptions to the Info Modal
     else if (context === 'consensus') {
         rulesContent.innerHTML = `
