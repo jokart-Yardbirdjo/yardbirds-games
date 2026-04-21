@@ -32,7 +32,27 @@ export function resetStats() {
 export function handleStop() { return; }
 export function forceLifeline() { return; }
 export function startDailyChallenge() { alert("Daily mode coming soon!"); }
-export function shareChallenge() { alert("Share feature coming soon!"); }
+
+export function shareChallenge() {
+    // 1. Generate a seed based on the quotes the player just experienced
+    const challengeSeed = btoa(JSON.stringify(state.songs.map(q => q.q))).substring(0, 10);
+    const score = Math.max(...state.rawScores); // Grab their raw score before normalization
+    
+    // 2. Build the URL
+    // We append the game ID, the seed, and the score so the receiver's game knows what to do
+    const url = `${window.location.origin}${window.location.pathname}?game=who_said_it&seed=${challengeSeed}&beat=${score}`;
+
+    // 3. Fallback copying logic (standard across modern browsers)
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(`I just scored ${score} in Who Said It! Think you can beat me? ${url}`)
+            .then(() => alert("Challenge Link Copied! Send it to a friend."))
+            .catch(err => {
+                prompt("Copy this link manually:", url);
+            });
+    } else {
+        prompt("Copy this link to challenge a friend:", url);
+    }
+}
 
 export async function startGame() {
     state.numPlayers = state.isMultiplayer ? state.numPlayers : 1; 
