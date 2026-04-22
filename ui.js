@@ -10,7 +10,9 @@ export function setMode(mode, element) {
     state.gameState.mode = mode;
 
     const customInput = document.getElementById('custom-input');
+    const currentCartridgeId = window.activeCartridge ? window.activeCartridge.manifest.id : '';
 
+    // 1. Song Trivia Sub-Pills Logic
     if (subOptions[mode]) {
         state.gameState.sub = subOptions[mode][0]; 
         document.getElementById('sub-label').innerText = mode === 'movie' ? 'Select Cinema Region' : (mode === 'artist' ? 'Select Artist' : 'Select Era / Genre');
@@ -20,7 +22,9 @@ export function setMode(mode, element) {
         renderSubPills();
     }
 
+    // 2. Custom Input Box Logic across the platform
     if (mode === 'ai_infinite') {
+        // Consensus AI
         customInput.classList.remove('hidden');
         customInput.placeholder = "Paste your OpenAI API Key...";
         customInput.type = "password"; 
@@ -28,10 +32,22 @@ export function setMode(mode, element) {
         if (savedKey) customInput.value = savedKey;
     } else if (mode === 'party_pack') {
         customInput.classList.add('hidden');
+    } else if (currentCartridgeId === 'who_said_it') {
+        // 👇 OUR NEW "WHO SAID IT" AI INJECTION 👇
+        customInput.classList.remove('hidden');
+        customInput.placeholder = "Optional: Paste OpenAI Key (sk-...) for Infinite AI";
+        customInput.type = "password"; 
+        const savedKey = localStorage.getItem('consensus_openai_key');
+        if (savedKey) customInput.value = savedKey;
+        else customInput.value = "";
+    } else if (mode !== 'custom' && !subOptions[mode]) {
+        // Hide for Fast Math
+        if (customInput) customInput.classList.add('hidden');
     }
 
+    // 3. Difficulty Level Locking (Fixed to only affect Song Trivia)
     const levelGroup = document.getElementById('level-group');
-    if (mode === 'movie') {
+    if (mode === 'movie' && currentCartridgeId === 'song_trivia') {
         setLevel('medium', document.getElementById('lvl-medium'));
         levelGroup.style.opacity = '0.5';
         levelGroup.style.pointerEvents = 'none';
