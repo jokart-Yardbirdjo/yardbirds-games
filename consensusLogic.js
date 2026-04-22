@@ -258,6 +258,9 @@ function nextRound() {
         document.getElementById('score-board').innerHTML = ''; 
         db.ref(`rooms/${state.roomCode}/currentRound`).set(state.curIdx + 1);
         
+        // 👇 ADD THIS LINE: Broadcast the question to the client phones! 👇
+        db.ref(`rooms/${state.roomCode}/currentPrompt`).set(q.prompt);
+        
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             if(snap.exists()) {
                 let updates = {};
@@ -269,7 +272,7 @@ function nextRound() {
                 db.ref(`rooms/${state.roomCode}/players`).update(updates);
             }
         });
-
+        
         const currentType = parseInt(q.type) || 5; 
         
         const safeQData = {
