@@ -26,22 +26,6 @@ export function setSub(val, element) {
     }
 }
 
-export function renderSubPills() {
-    const container = document.getElementById('sub-pills');
-    if(!container) return; // Cartridges like Consensus might not have this
-    container.innerHTML = '';
-    
-    if (!subOptions[state.gameState.mode]) return;
-
-    subOptions[state.gameState.mode].forEach(opt => {
-        const pill = document.createElement('div');
-        pill.className = `pill pill-wide ${state.gameState.sub === opt ? 'active' : ''}`;
-        pill.innerText = opt === 'shwe-special' ? 'Shwe Special (90s)' : (opt.charAt(0).toUpperCase() + opt.slice(1).replace(/-/g, ' '));
-        pill.onclick = () => setSub(opt, pill);
-        container.appendChild(pill);
-    });
-}
-
 export function setPill(groupId, element, val) {
     document.querySelectorAll(`#${groupId} .pill`).forEach(el => el.classList.remove('active'));
     element.classList.add('active');
