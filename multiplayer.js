@@ -61,7 +61,7 @@ export async function createRoom() {
         state: 'lobby',
         settings: state.gameState,
         cartridgeId: state.activeCartridgeId, 
-        createdAt: firebase.database.ServerValue.TIMESTAMP
+        createdAt: window.firebase.database.ServerValue.TIMESTAMP
     });
 
     // 2. The Dead-Man's Switch: If the host disconnects, wipe the room
