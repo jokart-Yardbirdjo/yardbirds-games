@@ -8,6 +8,17 @@ export const manifest = {
     title: "SONG TRIVIA",
     subtitle: "Yardbird's Original Masterpiece",
     hasDaily: true,
+    rulesHTML: `
+        <h2>How to Play</h2>
+        <ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;">
+            <li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li>
+            <li><strong>Today Three:</strong> A daily synced challenge.</li>
+            <li><strong>The Lifeline:</strong> Multiple Choice options drop at 10s.</li>
+        </ul>
+        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px; width: 100%;">
+            Got it! Let's Play
+        </button>
+    `,
     modes: [
         { id: "genre", title: "🎵 Guess the Artist & Song", desc: "Play by Era, Decade, or specific Genre." },
         { id: "artist", title: "🎤 Guess the Song", desc: "Focus strictly on a single Artist's catalog." },
