@@ -233,7 +233,6 @@ export function nextRound() {
     // 👇 FIXED: The proper non-nested setInterval that works for both! 👇
     state.timerId = setInterval(() => {
         state.timeLeft--;
-        
         let percentage = (state.timeLeft / state.timeLimit) * 100;
         if(timerFill) timerFill.style.width = `${percentage}%`;
 
@@ -242,7 +241,6 @@ export function nextRound() {
         }
 
         const helpThreshold = state.gameState.level === 'easy' ? 10 : 5;
-        
         if (state.gameState.level !== 'hard' && state.timeLeft === helpThreshold) {
             if (state.isMultiplayer && state.isHost) {
                 let removed = false;
@@ -272,9 +270,9 @@ export function nextRound() {
 
         if (state.timeLeft <= 0) {
             clearInterval(state.timerId);
-            // Only force the end locally if we are NOT in multiplayer. 
-            // If multiplayer, the Console handles it!
-            if (!state.isMultiplayer) {
+            if (state.isMultiplayer && state.isHost) {
+                db.ref(`rooms/${state.roomCode}/players`).once('value', snap => evaluateMultiplayerRound(snap.val()));
+            } else {
                 evaluateGuess(false, null); 
             }
         }
@@ -325,21 +323,20 @@ export async function evaluateMultiplayerRound(players) {
     Object.keys(players).forEach(pid => {
         const p = players[pid];
         let points = 0;
-        
         if (p.guess && p.guess.isMC && p.guess.correct) {
             const speedFactor = p.guess.time / state.timeLimit;
             points = Math.round(100 + (speedFactor * 100));
             if (state.doubleRounds.includes(state.curIdx)) points *= 2;
         }
-
-        results.push({
-            id: pid,
-            newScore: (p.score || 0) + points
-        });
+        results.push({ id: pid, newScore: (p.score || 0) + points });
     });
+
     state.curIdx++;
     window.finalizeMultiplayerRound(results);
     document.getElementById('feedback').innerHTML = `<h2 style="color:var(--brand)">ROUND OVER</h2><p>Check your phones!</p>`;
+    
+    // 👇 THIS IS THE CRITICAL ADDITION 👇
+    setTimeout(nextRound, 4000); 
 }
 
 function getNormalizedScore(rawScore) {
