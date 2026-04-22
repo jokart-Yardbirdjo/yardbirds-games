@@ -93,6 +93,11 @@ export function shareChallenge() {
 }
 
 export function startGame() {
+    // 🧹 GARBAGE COLLECTION: Wipe leftover data from previous cartridges
+    state.songs = [];
+    state.globalPool = [];
+    state.matchHistory = [];
+    
     state.isDailyMode = false;
     state.numPlayers = state.isMultiplayer ? state.numPlayers : 1; 
     state.timeLimit = state.gameState.level === 'easy' ? 30 : 15; 
