@@ -64,6 +64,9 @@ export async function createRoom() {
         createdAt: firebase.database.ServerValue.TIMESTAMP
     });
 
+    // 2. The Dead-Man's Switch: If the host disconnects, wipe the room
+    db.ref(`rooms/${state.roomCode}`).onDisconnect().remove();
+
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('host-lobby-screen').classList.remove('hidden');
     document.getElementById('display-room-code').innerText = state.roomCode;
