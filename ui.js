@@ -12,7 +12,6 @@ export function setMode(mode, element) {
     const customInput = document.getElementById('custom-input');
     const currentCartridgeId = window.activeCartridge ? window.activeCartridge.manifest.id : '';
 
-    // 1. Song Trivia Sub-Pills Logic
     if (subOptions[mode]) {
         state.gameState.sub = subOptions[mode][0]; 
         document.getElementById('sub-label').innerText = mode === 'movie' ? 'Select Cinema Region' : (mode === 'artist' ? 'Select Artist' : 'Select Era / Genre');
@@ -20,11 +19,31 @@ export function setMode(mode, element) {
         customInput.placeholder = "Paste your Public Apple Music Playlist or any custom text comma separated";
         customInput.type = "text";
         renderSubPills();
+    } else if (currentCartridgeId === 'who_said_it') {
+        // 👇 WHO SAID IT SUB-PILL INJECTION 👇
+        state.gameState.sub = 'party_pack';
+        document.getElementById('sub-label').innerText = "Select Data Source";
+        const container = document.getElementById('sub-pills');
+        if (container) {
+            container.innerHTML = '';
+            
+            const pillParty = document.createElement('div');
+            pillParty.className = `pill pill-wide active`;
+            pillParty.innerText = "Party Pack";
+            pillParty.onclick = () => window.setSub('party_pack', pillParty);
+
+            const pillAI = document.createElement('div');
+            pillAI.className = `pill pill-wide`;
+            pillAI.innerText = "Infinite AI";
+            pillAI.onclick = () => window.setSub('ai_infinite', pillAI);
+
+            container.appendChild(pillParty);
+            container.appendChild(pillAI);
+        }
+        customInput.classList.add('hidden');
     }
 
-    // 2. Custom Input Box Logic across the platform
-    if (mode === 'ai_infinite') {
-        // Consensus AI
+    if (mode === 'ai_infinite' && currentCartridgeId === 'consensus') {
         customInput.classList.remove('hidden');
         customInput.placeholder = "Paste your OpenAI API Key...";
         customInput.type = "password"; 
@@ -32,20 +51,10 @@ export function setMode(mode, element) {
         if (savedKey) customInput.value = savedKey;
     } else if (mode === 'party_pack') {
         customInput.classList.add('hidden');
-    } else if (currentCartridgeId === 'who_said_it') {
-        // 👇 OUR NEW "WHO SAID IT" AI INJECTION 👇
-        customInput.classList.remove('hidden');
-        customInput.placeholder = "Optional: Paste OpenAI Key (sk-...) for Infinite AI";
-        customInput.type = "password"; 
-        const savedKey = localStorage.getItem('consensus_openai_key');
-        if (savedKey) customInput.value = savedKey;
-        else customInput.value = "";
-    } else if (mode !== 'custom' && !subOptions[mode]) {
-        // Hide for Fast Math
+    } else if (currentCartridgeId !== 'who_said_it' && !subOptions[mode]) {
         if (customInput) customInput.classList.add('hidden');
     }
 
-    // 3. Difficulty Level Locking (Fixed to only affect Song Trivia)
     const levelGroup = document.getElementById('level-group');
     if (mode === 'movie' && currentCartridgeId === 'song_trivia') {
         setLevel('medium', document.getElementById('lvl-medium'));
@@ -79,10 +88,20 @@ export function setSub(val, element) {
     state.gameState.sub = val;
 
     const customInput = document.getElementById('custom-input');
+    const currentCartridgeId = window.activeCartridge ? window.activeCartridge.manifest.id : '';
+
     if (val === 'custom') {
         customInput.classList.remove('hidden');
-        // 👇 ADD THIS LINE to ensure the placeholder is correct when they click "Custom" 👇
         customInput.placeholder = "Paste your Public Apple Music Playlist or any custom text comma separated";
+        customInput.type = "text";
+        customInput.focus();
+    } else if (val === 'ai_infinite' && currentCartridgeId === 'who_said_it') {
+        // 👇 ONLY SHOW THE BOX IF THEY CLICK THE AI PILL 👇
+        customInput.classList.remove('hidden');
+        customInput.placeholder = "Paste your OpenAI API Key (sk-...)";
+        customInput.type = "password";
+        const savedKey = localStorage.getItem('consensus_openai_key');
+        if (savedKey) customInput.value = savedKey;
         customInput.focus();
     } else {
         customInput.classList.add('hidden');
@@ -162,7 +181,10 @@ export function buildSetupScreen(manifest) {
     state.gameState.level = manifest.levels[0].id;
     
     const isSongTrivia = manifest.id === 'song_trivia';
-    document.getElementById('sub-selection-area').classList.toggle('hidden', !isSongTrivia);
+    const isWhoSaidIt = manifest.id === 'who_said_it';
+    
+    // 👇 UNHIDE THE SUB-SECTION FOR BOTH SONG TRIVIA AND WHO SAID IT 👇
+    document.getElementById('sub-selection-area').classList.toggle('hidden', !(isSongTrivia || isWhoSaidIt));
     document.getElementById('players-rounds-area').classList.remove('hidden');
 
     const dailyContainer = document.getElementById('daily-btn-top').parentElement;
