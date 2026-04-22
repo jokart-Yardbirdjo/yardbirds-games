@@ -392,23 +392,15 @@ export function updatePlatformUI(context) {
     const rulesContent = document.querySelector('#rules-modal .modal-content');
     if(!rulesContent) return;
 
+    // The Platform only knows about the Main Menu. 
+    // Everything else is delegated to the active cartridge!
     if (context === 'main_menu') {
         rulesContent.innerHTML = `<h2>Welcome to Yardbird's</h2><p style="color:#ccc; line-height: 1.6;">Select a game cartridge from the main menu to begin.<br><br><strong>Party Mode:</strong> Want to play with friends? Select a game first, then click the menu icon (☰) in the top left to host a game on your TV and use phones as Kahoot-style controllers!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>`;
     } 
-    else if (context === 'fast_math') {
-        rulesContent.innerHTML = `<h2>Fast Math Rules</h2><p style="color:#ccc; line-height: 1.6;">Solve the arithmetic problem shown on the screen as fast as possible. The faster you answer, the more points you get. <br><br>Get 3 in a row correct for a +50 Streak Bonus!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Let's Go!</button>`;
+    else if (window.activeCartridge && window.activeCartridge.manifest.rulesHTML) {
+        rulesContent.innerHTML = window.activeCartridge.manifest.rulesHTML;
     }
-    else if (context === 'song_trivia') {
-        rulesContent.innerHTML = `<h2>How to Play</h2><ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;"><li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li><li><strong>Today Three:</strong> A daily synced challenge.</li><li><strong>The Lifeline:</strong> Multiple Choice options drop at 10s.</li></ul><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it! Let's Play</button>`;
-    }
-    // Inside updatePlatformUI() in ui.js
-    else if (context === 'who_said_it') {
-        rulesContent.innerHTML = `
-            <h2>Who Said It?</h2>
-            <p style="color:#ccc; line-height: 1.6;">Read the quote on the screen and identify who said it as fast as possible. The faster you answer, the more points you earn. <br><br>Get 3 right in a row to ignite a streak bonus!</p>
-            <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>
-        `;
-    }   
+        
     // FIX #4: Add detailed game descriptions to the Info Modal
     else if (context === 'consensus') {
         rulesContent.innerHTML = `
