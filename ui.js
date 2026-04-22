@@ -95,10 +95,7 @@ export function buildSetupScreen(manifest) {
         levelGroup.appendChild(card);
     });
 
-    const isSongTrivia = manifest.id === 'song_trivia';
-    const isWhoSaidIt = manifest.id === 'who_said_it';
-    
-    document.getElementById('sub-selection-area').classList.toggle('hidden', !(isSongTrivia || isWhoSaidIt));
+    document.getElementById('sub-selection-area').classList.add('hidden');
     document.getElementById('players-rounds-area').classList.remove('hidden');
 
     const dailyContainer = document.getElementById('daily-btn-top').parentElement;
