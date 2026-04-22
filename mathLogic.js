@@ -364,9 +364,13 @@ function endGameSequence() {
             const pIds = Object.keys(players);
             let finalResults = [];
             
-            pIds.forEach((pid, index) => {
-                finalResults.push({ name: players[pid].name, score: normalizedScores[index], id: pid });
-                db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: normalizedScores[index] });
+            pIds.forEach(pid => {
+                // 👇 THE FIX: Read the score directly from Firebase, not the local state array! 👇
+                const rawFirebaseScore = players[pid].score || 0;
+                const finalNormScore = getNormalizedScore(rawFirebaseScore);
+                
+                finalResults.push({ name: players[pid].name, score: finalNormScore, id: pid });
+                db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: finalNormScore });
             });
             
             finalResults.sort((a, b) => b.score - a.score); 
