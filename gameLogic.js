@@ -692,7 +692,7 @@ function startRoundClock() {
                 document.getElementById('visualizer').classList.add('paused');
                 
                 if (state.isMultiplayer && state.isHost) {
-                    db.ref(`rooms/${state.roomCode}/players`).once('value', snap => { evaluateMultiplayerRound(snap.val()); });
+                    db.ref(`rooms/${state.roomCode}/players`).once('value', snap => { (snap.val()); });
                 } else if (state.hasUsedLifeline) {
                     evaluateGuess(false); 
                 } else {
@@ -896,72 +896,7 @@ export function evaluateGuess(isCorrectMC = null, clickedBtn = null) {
     state.curIdx++; setTimeout(nextTrack, 4000); 
 }
 
-export function evaluateMultiplayerRound(players) {
-    if(state.isProcessing) return; 
-    state.isProcessing = true;
-    
-    if(state.timerId) clearInterval(state.timerId); audio.pause(); 
-    document.getElementById('visualizer').classList.add('paused'); document.getElementById('btn-container').classList.add('hidden');
 
-    const realA = state.songs[state.curIdx].artistName; const realS = state.songs[state.curIdx].trackName; const realM = getMovieName(state.songs[state.curIdx]); 
-
-    let fbHTML = `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:15px; font-weight:bold;">`;
-    const playerIds = Object.keys(players);
-    
-    playerIds.forEach((pid, index) => {
-        const p = players[pid]; let roundPts = 0; let correct = false; let artOk = false, sonOk = false, movOk = false;
-        let basePts = (p.guess && p.guess.phase === 'grace') ? 5 : (p.guess ? p.guess.time : 0);
-
-        if (p.guess && p.guess.isMC) {
-            correct = p.guess.correct; 
-            if (correct) {
-                roundPts = p.guess.time > 10 ? 5 : basePts; 
-            }
-        } else {
-            let artG = p.guess ? p.guess.artist || "" : ""; let sonG = p.guess ? p.guess.song || "" : ""; let movG = p.guess ? p.guess.movie || "" : "";
-            if (state.gameState.mode === 'genre') {
-                artOk = isCloseEnough(artG, realA, true); sonOk = isCloseEnough(sonG, realS, false);
-                if (artOk || sonOk) { correct = true; roundPts = basePts; if (artOk && sonOk) roundPts *= 2; }
-            } else if (state.gameState.mode === 'artist') {
-                if (isCloseEnough(sonG, realS, false)) { correct = true; roundPts = basePts * 2; }
-            } else if (state.gameState.mode === 'movie') {
-                if (isCloseEnough(movG, realM, false)) { correct = true; roundPts = basePts * 2; }
-            }
-            if (correct && p.guess && p.guess.phase === 'grace') roundPts = 5;
-        }
-
-        if (correct) {
-            if (!(p.guess && p.guess.isMC)) {
-                state.streaks[index]++;
-                if (state.streaks[index] % 3 === 0) { roundPts += 50; fbHTML += `<div style="color:var(--primary); font-size:0.85rem; margin-top:5px;">+50 PURE STREAK BONUS</div>`; }
-            } else {
-                state.streaks[index] = 0; 
-            }
-
-            if (state.doubleRounds && state.doubleRounds.includes(state.curIdx)) {
-                roundPts *= 2;
-                fbHTML += `<div style="color:#f39c12; font-size:0.85rem; margin-top:2px; font-weight:bold;">⭐ 2X BONUS APPLIED!</div>`;
-            }
-            
-            state.rawScores[index] += roundPts;
-            fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.nickname || p.name || "Player"}: +${roundPts}</div>`;
-        } else {
-            fbHTML += `<div style="color:var(--fail); font-size:1.1rem;">❌ ${p.nickname || p.name || "Player"}: 0</div>`;
-            state.streaks[index] = 0;
-        }
-    });
-    fbHTML += `</div>`;
-    fbHTML += `<div style="font-size:1.05rem; color:var(--dark-text); margin-top:10px;">${realA} - ${realS}</div>`;
-    if (state.gameState.mode === 'movie') fbHTML += `<div style="font-size:0.9rem; color:var(--primary); margin-top:3px;">🎬 ${realM}</div>`;
-
-    updateLeaderboard(-1); 
-    document.getElementById('feedback').innerHTML = fbHTML; document.getElementById('feedback').classList.add('fade-in');
-    
-    const img = document.getElementById('reveal-art');
-    img.src = state.songs[state.curIdx].artworkUrl100.replace('100x100bb', '400x400bb'); img.classList.add('fade-in'); img.style.display = 'block';
-
-    state.curIdx++; setTimeout(nextTrack, 5000); 
-}
 
 function shootConfetti() {
     for(let i=0; i<100; i++) {
@@ -993,6 +928,83 @@ export function shareChallenge() {
     else { navigator.clipboard.writeText(text + "\n" + url); alert("Challenge link & grid copied to clipboard! Paste it to your friends."); }
 }
 
+// --- Replace evaluateMultiplayerRound in gameLogic.js ---
+export function evaluateMultiplayerRound(players) {
+    if(state.isProcessing) return; 
+    state.isProcessing = true;
+    
+    if(state.timerId) clearInterval(state.timerId); audio.pause(); 
+    document.getElementById('visualizer').classList.add('paused'); document.getElementById('btn-container').classList.add('hidden');
+
+    const realA = state.songs[state.curIdx].artistName; const realS = state.songs[state.curIdx].trackName; const realM = getMovieName(state.songs[state.curIdx]); 
+
+    let fbHTML = `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:15px; font-weight:bold;">`;
+    const playerIds = Object.keys(players);
+    const results = []; // 👈 NEW: Array to collect points
+    
+    playerIds.forEach((pid, index) => {
+        const p = players[pid]; let roundPts = 0; let correct = false; let artOk = false, sonOk = false, movOk = false;
+        let basePts = (p.guess && p.guess.phase === 'grace') ? 5 : (p.guess ? p.guess.time : 0);
+
+        if (p.guess && p.guess.isMC) {
+            correct = p.guess.correct; 
+            if (correct) { roundPts = p.guess.time > 10 ? 5 : basePts; }
+        } else {
+            let artG = p.guess ? p.guess.artist || "" : ""; let sonG = p.guess ? p.guess.song || "" : ""; let movG = p.guess ? p.guess.movie || "" : "";
+            if (state.gameState.mode === 'genre') {
+                artOk = isCloseEnough(artG, realA, true); sonOk = isCloseEnough(sonG, realS, false);
+                if (artOk || sonOk) { correct = true; roundPts = basePts; if (artOk && sonOk) roundPts *= 2; }
+            } else if (state.gameState.mode === 'artist') {
+                if (isCloseEnough(sonG, realS, false)) { correct = true; roundPts = basePts * 2; }
+            } else if (state.gameState.mode === 'movie') {
+                if (isCloseEnough(movG, realM, false)) { correct = true; roundPts = basePts * 2; }
+            }
+            if (correct && p.guess && p.guess.phase === 'grace') roundPts = 5;
+        }
+
+        if (correct) {
+            if (!(p.guess && p.guess.isMC)) {
+                state.streaks[index]++;
+                if (state.streaks[index] % 3 === 0) { roundPts += 50; fbHTML += `<div style="color:var(--primary); font-size:0.85rem; margin-top:5px;">+50 PURE STREAK BONUS</div>`; }
+            } else { state.streaks[index] = 0; }
+
+            if (state.doubleRounds && state.doubleRounds.includes(state.curIdx)) {
+                roundPts *= 2; fbHTML += `<div style="color:#f39c12; font-size:0.85rem; margin-top:2px; font-weight:bold;">⭐ 2X BONUS APPLIED!</div>`;
+            }
+            
+            state.rawScores[index] += roundPts;
+            fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.nickname || p.name || "Player"}: +${roundPts}</div>`;
+        } else {
+            fbHTML += `<div style="color:var(--fail); font-size:1.1rem;">❌ ${p.nickname || p.name || "Player"}: 0</div>`;
+            state.streaks[index] = 0;
+        }
+
+        // 👈 NEW: Push the calculated score to the array
+        results.push({
+            id: pid,
+            newScore: (p.score || 0) + roundPts
+        });
+    });
+    
+    fbHTML += `</div>`;
+    fbHTML += `<div style="font-size:1.05rem; color:var(--dark-text); margin-top:10px;">${realA} - ${realS}</div>`;
+    if (state.gameState.mode === 'movie') fbHTML += `<div style="font-size:0.9rem; color:var(--primary); margin-top:3px;">🎬 ${realM}</div>`;
+
+    updateLeaderboard(-1); 
+    document.getElementById('feedback').innerHTML = fbHTML; document.getElementById('feedback').classList.add('fade-in');
+    
+    const img = document.getElementById('reveal-art');
+    img.src = state.songs[state.curIdx].artworkUrl100.replace('100x100bb', '400x400bb'); img.classList.add('fade-in'); img.style.display = 'block';
+
+    state.curIdx++; 
+    
+    // 👈 NEW: Sync with platform and set local timer
+    window.finalizeMultiplayerRound(results);
+    setTimeout(nextTrack, 5000); 
+}
+
+
+// --- Replace endGameSequence in gameLogic.js ---
 function endGameSequence() {
     document.getElementById('play-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
@@ -1013,7 +1025,10 @@ function endGameSequence() {
                 const pIds = Object.keys(players);
                 let finalResults = [];
                 pIds.forEach((pid, index) => {
-                    const normScore = normalizedScores[index] || 0;
+                    // 👈 NEW: Calculate the Normalized Score using Firebase Data!
+                    const rawFirebaseScore = players[pid].score || 0;
+                    const normScore = getNormalizedScore(rawFirebaseScore);
+                    
                     finalResults.push({ name: players[pid].nickname || players[pid].name || "Player", score: normScore, id: pid });
                     db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: normScore });
                 });
