@@ -333,7 +333,10 @@ function nextRound() {
         if (state.timeLeft <= 0) {
             clearInterval(state.timerId);
             if (state.isHost) {
-                db.ref(`rooms/${state.roomCode}/players`).once('value', snap => (snap.val()));
+                // 👇 ADDED PROMISE HANDLING TO ENSURE EXECUTION 👇
+                db.ref(`rooms/${state.roomCode}/players`).once('value')
+                  .then(snap => evaluateMultiplayerRound(snap.val()))
+                  .catch(err => { console.error(err); evaluateMultiplayerRound({}); });
             } else {
                 evaluateSoloGuess(); 
             }
@@ -583,129 +586,146 @@ export function evaluateSoloGuess(source) {
     state.curIdx++; setTimeout(nextRound, 4000);
 }
 
-// --- Replace evaluateMultiplayerRound in consensusLogic.js ---
 export function evaluateMultiplayerRound(players) {
     if (state.isProcessing) return;
     state.isProcessing = true;
     clearInterval(state.timerId);
 
-    const q = state.songs[state.curIdx];
-    const isDouble = state.doubleRounds.includes(state.curIdx);
-    const mult = isDouble ? 2 : 1;
-    let roundEarnings = {}; 
-    const results = []; // 👈 NEW: Array to send to the platform
-    
-    const pIds = Object.keys(players || {}).sort();
-    pIds.forEach(pid => roundEarnings[pid] = 0);
+    try {
+        const q = state.songs[state.curIdx];
+        if (!q) { state.curIdx++; setTimeout(nextRound, 3000); return; }
 
-    let revealHTML = "";
-
-    // ... (Keep all the existing if/else logic for q.type === 1, 2, 3, 4, 5 exactly as is)
-    if (q.type === 1) {
-        let votes = {};
-        pIds.forEach(pid => { if(players[pid].guess1) votes[players[pid].guess1] = (votes[players[pid].guess1] || 0) + 1; });
-        let voteGroups = {};
-        Object.keys(votes).forEach(pid => { let v = votes[pid]; if(!voteGroups[v]) voteGroups[v] = []; voteGroups[v].push(pid); });
-        let sorted = Object.keys(voteGroups).map(Number).sort((a,b) => b - a);
-
-        if(sorted.length > 0) {
-            let topTierIds = voteGroups[sorted[0]];
-            let names = topTierIds.map(pid => players[pid]?.name || 'Nobody').join(" & ");
-            let tieTxt = topTierIds.length > 1 ? " (It's a tie!)" : "";
-            revealHTML = `Most Voted${tieTxt}: <strong style="color:var(--primary)">${names}</strong> (${sorted[0]} votes)`;
-            
-            if(sorted[0] !== undefined) voteGroups[sorted[0]].forEach(pid => roundEarnings[pid] = 300 * mult);
-            if(sorted[1] !== undefined) voteGroups[sorted[1]].forEach(pid => roundEarnings[pid] = 200 * mult);
-            if(sorted[2] !== undefined) voteGroups[sorted[2]].forEach(pid => roundEarnings[pid] = 100 * mult);
-        } else revealHTML = `Most Voted: Nobody`;
-    } 
-    else if (q.type === 2) {
-        let aVotes = 0, bVotes = 0;
-        pIds.forEach(pid => { if(players[pid].guess1 === 'A') aVotes++; else if(players[pid].guess1 === 'B') bVotes++; });
-        let roomWinner = aVotes > bVotes ? 'A' : (bVotes > aVotes ? 'B' : 'Tie');
-        if (roomWinner === 'Tie') revealHTML = `<div style="color:var(--primary)">It's a Tie! Both sides win.</div>`;
-        else revealHTML = `The Room Chose: <strong style="color:var(--primary)">${roomWinner === 'A' ? q.optA : q.optB}</strong>`;
+        const isDouble = state.doubleRounds && state.doubleRounds.includes(state.curIdx);
+        const mult = isDouble ? 2 : 1;
+        let roundEarnings = {}; 
+        const results = []; 
         
-        pIds.forEach(pid => { 
-            if (roomWinner === 'Tie' && (players[pid].guess2 === 'A' || players[pid].guess2 === 'B')) roundEarnings[pid] = 300 * mult;
-            else if (players[pid].guess2 === roomWinner) roundEarnings[pid] = 300 * mult; 
-        });
-    }
-    else if (q.type === 3) {
-        revealHTML = `Top Answer: <strong style="color:var(--primary)">${q.options[0]}</strong><br>#2: ${q.options[1]}<br>#3: ${q.options[2]}`;
-        pIds.forEach(pid => {
-            let g = players[pid].guess1;
-            let pts = g === 0 ? 300 : (g === 1 ? 200 : (g === 2 ? 100 : 0));
-            roundEarnings[pid] = pts * mult;
-        });
-    }
-    else if (q.type === 4) {
-        let raised = 0;
-        pIds.forEach(pid => { if(players[pid].guess1 === true) raised++; });
-        revealHTML = `👍 Total Thumbs Up: <strong style="color:var(--primary)">${raised}</strong>`;
-        pIds.forEach(pid => { if (parseInt(players[pid].guess2) === raised) roundEarnings[pid] = 300 * mult; });
-    }
-    else if (q.type === 5) {
-        revealHTML = `Actual Answer: <strong style="color:var(--primary)">${q.answer}</strong>`;
-        let diffs = [];
-        pIds.forEach(pid => { if(players[pid].guess1) diffs.push({ pid: pid, diff: Math.abs(q.answer - parseInt(players[pid].guess1)) }); });
-        let diffGroups = {};
-        diffs.forEach(d => { if(!diffGroups[d.diff]) diffGroups[d.diff] = []; diffGroups[d.diff].push(d.pid); });
-        let sorted = Object.keys(diffGroups).map(Number).sort((a,b) => a - b);
+        const pIds = Object.keys(players || {}).sort();
+        pIds.forEach(pid => roundEarnings[pid] = 0);
 
-        if(sorted.length > 0) {
-            let names = diffGroups[sorted[0]].map(pid => players[pid]?.name || 'Nobody').join(" & ");
-            revealHTML += `<br>Closest: <strong style="color:var(--p2)">${names}</strong> (Off by ${sorted[0]})`;
-            if(sorted[0] !== undefined) diffGroups[sorted[0]].forEach(pid => roundEarnings[pid] = 300 * mult);
-            if(sorted[1] !== undefined) diffGroups[sorted[1]].forEach(pid => roundEarnings[pid] = 200 * mult);
-            if(sorted[2] !== undefined) diffGroups[sorted[2]].forEach(pid => roundEarnings[pid] = 100 * mult);
+        let revealHTML = "";
+
+        if (q.type === 1) {
+            let votes = {};
+            pIds.forEach(pid => { if(players[pid] && players[pid].guess1) votes[players[pid].guess1] = (votes[players[pid].guess1] || 0) + 1; });
+            let voteGroups = {};
+            Object.keys(votes).forEach(v => { let count = votes[v]; if(!voteGroups[count]) voteGroups[count] = []; voteGroups[count].push(v); });
+            let sorted = Object.keys(voteGroups).map(Number).sort((a,b) => b - a);
+
+            if(sorted.length > 0) {
+                let topTierIds = voteGroups[sorted[0]];
+                let names = topTierIds.map(pid => players[pid]?.name || 'Nobody').join(" & ");
+                let tieTxt = topTierIds.length > 1 ? " (It's a tie!)" : "";
+                revealHTML = `Most Voted${tieTxt}: <strong style="color:var(--primary)">${names}</strong> (${sorted[0]} votes)`;
+                
+                if(sorted[0] !== undefined) voteGroups[sorted[0]].forEach(pid => roundEarnings[pid] = 300 * mult);
+                if(sorted[1] !== undefined) voteGroups[sorted[1]].forEach(pid => roundEarnings[pid] = 200 * mult);
+                if(sorted[2] !== undefined) voteGroups[sorted[2]].forEach(pid => roundEarnings[pid] = 100 * mult);
+            } else revealHTML = `Most Voted: Nobody`;
+        } 
+        else if (q.type === 2) {
+            let aVotes = 0, bVotes = 0;
+            pIds.forEach(pid => { if(players[pid] && players[pid].guess1 === 'A') aVotes++; else if(players[pid] && players[pid].guess1 === 'B') bVotes++; });
+            let roomWinner = aVotes > bVotes ? 'A' : (bVotes > aVotes ? 'B' : 'Tie');
+            if (roomWinner === 'Tie') revealHTML = `<div style="color:var(--primary)">It's a Tie! Both sides win.</div>`;
+            else revealHTML = `The Room Chose: <strong style="color:var(--primary)">${roomWinner === 'A' ? q.optA : q.optB}</strong>`;
+            
+            pIds.forEach(pid => { 
+                if (roomWinner === 'Tie' && players[pid] && (players[pid].guess2 === 'A' || players[pid].guess2 === 'B')) roundEarnings[pid] = 300 * mult;
+                else if (players[pid] && players[pid].guess2 === roomWinner) roundEarnings[pid] = 300 * mult; 
+            });
         }
-    }
+        else if (q.type === 3) {
+            revealHTML = `Top Answer: <strong style="color:var(--primary)">${q.options[0]}</strong><br>#2: ${q.options[1]}<br>#3: ${q.options[2]}`;
+            pIds.forEach(pid => {
+                let g = players[pid] ? players[pid].guess1 : undefined;
+                let pts = g === 0 ? 300 : (g === 1 ? 200 : (g === 2 ? 100 : 0));
+                roundEarnings[pid] = pts * mult;
+            });
+        }
+        else if (q.type === 4) {
+            let raised = 0;
+            pIds.forEach(pid => { if(players[pid] && players[pid].guess1 === true) raised++; });
+            revealHTML = `👍 Total Thumbs Up: <strong style="color:var(--primary)">${raised}</strong>`;
+            pIds.forEach(pid => { if (players[pid] && parseInt(players[pid].guess2) === raised) roundEarnings[pid] = 300 * mult; });
+        }
+        else if (q.type === 5) {
+            revealHTML = `Actual Answer: <strong style="color:var(--primary)">${q.answer}</strong>`;
+            let diffs = [];
+            // 👇 FIXED MISSING DATA BUG HERE 👇
+            pIds.forEach(pid => { 
+                if(players[pid] && players[pid].guess1 !== undefined && players[pid].guess1 !== null && players[pid].guess1 !== "") { 
+                    diffs.push({ pid: pid, diff: Math.abs(q.answer - parseInt(players[pid].guess1)) }); 
+                } 
+            });
+            let diffGroups = {};
+            diffs.forEach(d => { if(!diffGroups[d.diff]) diffGroups[d.diff] = []; diffGroups[d.diff].push(d.pid); });
+            let sorted = Object.keys(diffGroups).map(Number).sort((a,b) => a - b);
 
-    document.getElementById('score-board').innerHTML = ''; 
+            if(sorted.length > 0) {
+                let names = diffGroups[sorted[0]].map(pid => players[pid]?.name || 'Nobody').join(" & ");
+                revealHTML += `<br>Closest: <strong style="color:var(--p2)">${names}</strong> (Off by ${sorted[0]})`;
+                if(sorted[0] !== undefined) diffGroups[sorted[0]].forEach(pid => roundEarnings[pid] = 300 * mult);
+                if(sorted[1] !== undefined) diffGroups[sorted[1]].forEach(pid => roundEarnings[pid] = 200 * mult);
+                if(sorted[2] !== undefined) diffGroups[sorted[2]].forEach(pid => roundEarnings[pid] = 100 * mult);
+            }
+        }
 
-    let fbHTML = `<div style="font-size:1.3rem; margin-bottom:15px; color:var(--dark-text);">${revealHTML}</div><div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
-    pIds.forEach((pid, index) => {
-        if (roundEarnings[pid] > 0) {
-            state.streaks[index]++;
-            if (state.streaks[index] > 0 && state.streaks[index] % 3 === 0) roundEarnings[pid] += 50; 
-            state.rawScores[index] += roundEarnings[pid];
-            fbHTML += `<div style="background:rgba(0, 184, 148, 0.1); border:1px solid var(--success); padding:8px 12px; border-radius:8px; color:var(--success); font-weight:bold; font-size:0.9rem;">✅ ${players[pid].name}: +${roundEarnings[pid]}</div>`;
+        document.getElementById('score-board').innerHTML = ''; 
+
+        let fbHTML = `<div style="font-size:1.3rem; margin-bottom:15px; color:var(--dark-text);">${revealHTML}</div><div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
+        pIds.forEach((pid, index) => {
+            if (roundEarnings[pid] > 0) {
+                state.streaks[index]++;
+                if (state.streaks[index] > 0 && state.streaks[index] % 3 === 0) roundEarnings[pid] += 50; 
+                state.rawScores[index] += roundEarnings[pid];
+                fbHTML += `<div style="background:rgba(0, 184, 148, 0.1); border:1px solid var(--success); padding:8px 12px; border-radius:8px; color:var(--success); font-weight:bold; font-size:0.9rem;">✅ ${players[pid]?.name || 'Player'}: +${roundEarnings[pid]}</div>`;
+            } else {
+                state.streaks[index] = 0;
+                fbHTML += `<div style="background:rgba(214, 48, 49, 0.1); border:1px solid var(--fail); padding:8px 12px; border-radius:8px; color:var(--fail); font-weight:bold; font-size:0.9rem;">❌ ${players[pid]?.name || 'Player'}: 0</div>`;
+            }
+
+            results.push({
+                id: pid,
+                newScore: ((players[pid] && players[pid].score) ? players[pid].score : 0) + roundEarnings[pid]
+            });
+        });
+
+        fbHTML += `</div>`; 
+
+        if (state.curIdx + 1 < state.maxRounds) {
+            fbHTML += `<div style="width:100%; text-align:center; margin-top:25px; font-size:1.2rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Next round loading...</div>`;
         } else {
-            state.streaks[index] = 0;
-            fbHTML += `<div style="background:rgba(214, 48, 49, 0.1); border:1px solid var(--fail); padding:8px 12px; border-radius:8px; color:var(--fail); font-weight:bold; font-size:0.9rem;">❌ ${players[pid].name}: 0</div>`;
+            fbHTML += `<div style="width:100%; text-align:center; margin-top:25px; font-size:1.2rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Calculating final scores...</div>`;
         }
 
-        // 👈 NEW: Push calculated score to the platform array
-        results.push({
-            id: pid,
-            newScore: (players[pid].score || 0) + roundEarnings[pid]
-        });
-    });
+        db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'reveal' });
+        document.getElementById('feedback').innerHTML = fbHTML;
+        
+        document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
+            <div class="score-pill" style="border-color:${colors[i % colors.length]};">
+                <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
+                <div class="p-pts" style="color:var(--dark-text)">${s}</div>
+                <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
+            </div>`).join('');
 
-    fbHTML += `</div>`; 
-
-    if (state.curIdx + 1 < state.maxRounds) {
-        fbHTML += `<div style="width:100%; text-align:center; margin-top:25px; font-size:1.2rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Next round loading...</div>`;
-    } else {
-        fbHTML += `<div style="width:100%; text-align:center; margin-top:25px; font-size:1.2rem; color:var(--text-muted); font-weight:bold; text-transform:uppercase;">Calculating final scores...</div>`;
+        state.curIdx++; 
+        
+        if (window.finalizeMultiplayerRound) {
+            // Prevent Firebase crash if nobody was in the room / nobody guessed
+            if (results.length === 0) results.push({ id: "dummy", newScore: 0 }); 
+            window.finalizeMultiplayerRound(results);
+        }
+        setTimeout(nextRound, 7000); 
+        
+    } catch (err) {
+        console.error("Evaluation Error: ", err);
+        // If anything fails, it catches it and FORCES the game to advance!
+        document.getElementById('feedback').innerHTML = `<h2 style="color:var(--fail);">Round Skipped.</h2>`;
+        state.curIdx++;
+        if (window.finalizeMultiplayerRound) window.finalizeMultiplayerRound([{ id: "dummy", newScore: 0 }]);
+        setTimeout(nextRound, 4000);
     }
-
-    db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'reveal' });
-    document.getElementById('feedback').innerHTML = fbHTML;
-    
-    document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
-        <div class="score-pill" style="border-color:${colors[i % colors.length]};">
-            <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
-            <div class="p-pts" style="color:var(--dark-text)">${s}</div>
-            <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
-        </div>`).join('');
-
-    state.curIdx++; 
-    
-    // 👈 NEW: Hand the scores to the Platform, and set the local timer for the next round!
-    window.finalizeMultiplayerRound(results);
-    setTimeout(nextRound, 7000); 
 }
 
 // --- Replace endGameSequence in consensusLogic.js ---
