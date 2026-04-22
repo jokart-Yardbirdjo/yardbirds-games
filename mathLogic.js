@@ -46,6 +46,26 @@ export function resetStats() {
     }
 }
 
+export function renderStatsUI(fmStats, container) {
+    container.innerHTML = `
+        <h2 style="color:var(--brand); margin-top:0; text-align:center; border-bottom:1px solid #333; padding-bottom:15px;">Fast Math Locker</h2>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div>
+                <div class="stat-val">${fmStats.gamesPlayed || 0}</div>
+            </div>
+            <div class="stat-box">
+                <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">High Score</div>
+                <div class="stat-val" style="color:var(--p1)">${fmStats.highScore || fmStats.hsText || 0}</div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+            <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">Close</button>
+            <button class="btn btn-reset" onclick="if(window.activeCartridge && window.activeCartridge.resetStats) { window.activeCartridge.resetStats(); hideModal('stats-modal'); }" style="margin-top: 0; padding: 16px;">Reset</button>
+        </div>
+    `;
+}
+
 export function shareChallenge() { 
     // Grab the normalized score (or raw score if you haven't normalized it yet)
     const currentScore = state.rawScores[0] || 0;
