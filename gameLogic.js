@@ -1204,3 +1204,16 @@ export function onSubSelect(val) {
         customInput.classList.add('hidden');
     }
 }
+
+// Add to gameLogic.js
+export function hasPlayedDaily() {
+    return state.userStats.song_trivia ? state.userStats.song_trivia.playedDailyToday : false;
+}
+
+export function checkDailyReset() {
+    const todayStr = new Date().toDateString();
+    if (state.userStats.song_trivia && state.userStats.song_trivia.lastPlayedDate !== todayStr && state.userStats.song_trivia.lastPlayedDate !== null) {
+        state.userStats.song_trivia.playedDailyToday = false;
+        localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
+    }
+}
