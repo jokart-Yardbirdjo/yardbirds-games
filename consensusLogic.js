@@ -365,10 +365,15 @@ export function renderClientUI(hostState) {
     const q = hostState.qData || {};
     const type = parseInt(hostState.type || q.type);
     
-    if(promptDiv && q.prompt) {
-        promptDiv.innerText = q.prompt;
-        promptDiv.classList.remove('hidden');
+    // 👇 THE FIX: Force Consensus to draw its own question prompt! 👇
+    if (q.prompt) {
+        html += `<div style="font-size:1.3rem; font-weight:bold; color:var(--dark-text); text-align:center; margin-bottom:20px; padding:15px; background:rgba(0,0,0,0.03); border-radius:12px; border:1px solid var(--border-light); line-height: 1.4;">
+            ${q.prompt}
+        </div>`;
     }
+    
+    // Hide the platform's default prompt to prevent weird overlapping
+    if(promptDiv) promptDiv.classList.add('hidden');
 
     // UPDATED: Client Phone UI styling for Light Mode
     if (type === 1) {
