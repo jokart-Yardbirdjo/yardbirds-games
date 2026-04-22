@@ -20,13 +20,30 @@ window.startMultiplayerGame = startMultiplayerGame; window.cancelLobby = cancelL
 window.cancelActiveGame = cancelActiveGame; window.submitClientTextGuess = submitClientTextGuess;
 window.requestClientLifeline = requestClientLifeline;
 
-window.loadCartridge = (gameId) => {
-    // 👇 The updated routing logic 👇
-    if (gameId === 'fast_math') window.activeCartridge = FastMath;
-    else if (gameId === 'consensus') window.activeCartridge = Consensus;
-    else if (gameId === 'who_said_it') window.activeCartridge = QuoteTrivia;
-    else window.activeCartridge = SongTrivia;
+// 👇 ADD THIS VALIDATOR 👇
+function validateCartridge(cartridge) {
+    const requiredExports = ['manifest', 'startGame', 'handleStop', 'resetStats', 'shareChallenge'];
+    const missing = requiredExports.filter(req => typeof cartridge[req] === 'undefined');
     
+    if (missing.length > 0) {
+        throw new Error(`Cartridge Contract Violation: Missing ${missing.join(', ')}`);
+    }
+    return true;
+}
+
+window.loadCartridge = (gameId) => {
+    let targetCartridge;
+    
+    // Routing logic
+    if (gameId === 'fast_math') targetCartridge = FastMath;
+    else if (gameId === 'consensus') targetCartridge = Consensus;
+    else if (gameId === 'who_said_it') targetCartridge = QuoteTrivia;
+    else targetCartridge = SongTrivia;
+    
+    // Validate BEFORE making it active
+    validateCartridge(targetCartridge);
+    
+    window.activeCartridge = targetCartridge;
     state.activeCartridgeId = gameId;
     document.getElementById('main-title').innerText = window.activeCartridge.manifest.title;
     updatePlatformUI(gameId); 
@@ -42,7 +59,18 @@ window.selectGame = (gameId) => {
         document.getElementById('setup-screen').classList.remove('hidden');
     } catch(e) {
         console.error("Cartridge Load Error:", e);
-        alert("Oops! The engine hit an error loading this game. Check the console.");
+        // 👇 Premium Error Boundary UX 👇
+        const titleEl = document.getElementById('main-title');
+        if (titleEl) titleEl.innerText = "SYSTEM ERROR";
+        
+        document.getElementById('main-menu-screen').innerHTML = `
+            <div style="background: rgba(214, 48, 49, 0.1); border: 2px solid var(--fail); padding: 30px; border-radius: 16px; text-align: center; margin-top: 20px;">
+                <h2 style="color: var(--fail); font-size: 2rem; margin-top: 0;">Corrupt Cartridge</h2>
+                <p style="color: var(--dark-text); font-size: 1.1rem;">The engine caught an error while trying to load this game. It's missing required core functions.</p>
+                <div style="background: #111; color: #ff6b6b; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; margin: 15px 0;">${e.message}</div>
+                <button class="btn btn-main" onclick="location.reload()" style="margin-top: 10px;">Reboot System</button>
+            </div>
+        `;
     }
 };
 
