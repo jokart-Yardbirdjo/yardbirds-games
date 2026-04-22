@@ -7,6 +7,18 @@ export const manifest = {
     title: "FAST MATH",
     subtitle: "Quick-fire arithmetic battles",
     hasDaily: false,
+    rulesHTML: `
+        <h2>Fast Math Rules</h2>
+        <p style="color:#ccc; line-height: 1.6;">
+            Solve the arithmetic problem shown on the screen as fast as possible. 
+            The faster you answer, the more points you get. 
+            <br><br>
+            Get 3 in a row correct for a <strong>+50 Streak Bonus!</strong>
+        </p>
+        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px; width: 100%;">
+            Let's Go!
+        </button>
+    `,
     modes: [ 
         { id: "addition", title: "➕ Addition", desc: "Classic 2-digit sums." },
         { id: "subtraction", title: "➖ Subtraction", desc: "Quick mental differences." },
