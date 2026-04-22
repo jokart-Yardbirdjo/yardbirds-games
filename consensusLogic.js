@@ -6,6 +6,19 @@ export const manifest = {
     id: "consensus",
     title: "THE CONSENSUS",
     subtitle: "A Social Party Game",
+    rulesHTML: `
+        <h2>The 5 Consensus Games</h2>
+        <div style="text-align:left; color:#ccc; line-height:1.5; font-size:0.9rem;">
+            <p><strong style="color:var(--highlight);">1. Most Likely To:</strong> Secretly vote for the player in the room who best fits the description.</p>
+            <p><strong style="color:var(--highlight);">2. The Great Divide:</strong> Pick between two scenarios, then predict which one the majority of the room will choose.</p>
+            <p><strong style="color:var(--highlight);">3. Hive Mind:</strong> This is a Kahoot-style survey. Try to guess the #1 answer from standard Family Feud style data.</p>
+            <p><strong style="color:var(--highlight);">4. Guilty as Charged:</strong> Tap "Raise Hand" if you've done the absurdity. Then predict how many TOTAL hands will be raised.</p>
+            <p><strong style="color:var(--highlight);">5. Shot in the Dark:</strong> Use your phone to type the closest numeric guess. The closer you are, the more points you get.</p>
+        </div>
+        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="width:100%; margin-top: 15px;">
+            Let's Go!
+        </button>
+    `,
     modes: [
         { id: "party_pack", title: "📦 Party Pack", desc: "Play with classic built-in questions." },
         { id: "ai_infinite", title: "✨ Infinite AI", desc: "Generate unique, absurd prompts using OpenAI." }
