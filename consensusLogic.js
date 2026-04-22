@@ -330,7 +330,7 @@ function nextRound() {
         if (state.timeLeft <= 0) {
             clearInterval(state.timerId);
             if (state.isHost) {
-                db.ref(`rooms/${state.roomCode}/players`).once('value', snap => evaluateMultiplayerRound(snap.val()));
+                db.ref(`rooms/${state.roomCode}/players`).once('value', snap => (snap.val()));
             } else {
                 evaluateSoloGuess(); 
             }
@@ -575,7 +575,7 @@ export function evaluateSoloGuess(source) {
     state.curIdx++; setTimeout(nextRound, 4000);
 }
 
-// --- MULTIPLAYER SCORING ENGINE ---
+// --- Replace evaluateMultiplayerRound in consensusLogic.js ---
 export function evaluateMultiplayerRound(players) {
     if (state.isProcessing) return;
     state.isProcessing = true;
@@ -585,26 +585,25 @@ export function evaluateMultiplayerRound(players) {
     const isDouble = state.doubleRounds.includes(state.curIdx);
     const mult = isDouble ? 2 : 1;
     let roundEarnings = {}; 
+    const results = []; // 👈 NEW: Array to send to the platform
     
     const pIds = Object.keys(players || {}).sort();
     pIds.forEach(pid => roundEarnings[pid] = 0);
 
     let revealHTML = "";
 
+    // ... (Keep all the existing if/else logic for q.type === 1, 2, 3, 4, 5 exactly as is)
     if (q.type === 1) {
         let votes = {};
         pIds.forEach(pid => { if(players[pid].guess1) votes[players[pid].guess1] = (votes[players[pid].guess1] || 0) + 1; });
-        
         let voteGroups = {};
         Object.keys(votes).forEach(pid => { let v = votes[pid]; if(!voteGroups[v]) voteGroups[v] = []; voteGroups[v].push(pid); });
-        
         let sorted = Object.keys(voteGroups).map(Number).sort((a,b) => b - a);
 
         if(sorted.length > 0) {
             let topTierIds = voteGroups[sorted[0]];
             let names = topTierIds.map(pid => players[pid]?.name || 'Nobody').join(" & ");
             let tieTxt = topTierIds.length > 1 ? " (It's a tie!)" : "";
-            
             revealHTML = `Most Voted${tieTxt}: <strong style="color:var(--primary)">${names}</strong> (${sorted[0]} votes)`;
             
             if(sorted[0] !== undefined) voteGroups[sorted[0]].forEach(pid => roundEarnings[pid] = 300 * mult);
@@ -616,19 +615,12 @@ export function evaluateMultiplayerRound(players) {
         let aVotes = 0, bVotes = 0;
         pIds.forEach(pid => { if(players[pid].guess1 === 'A') aVotes++; else if(players[pid].guess1 === 'B') bVotes++; });
         let roomWinner = aVotes > bVotes ? 'A' : (bVotes > aVotes ? 'B' : 'Tie');
-        
-        if (roomWinner === 'Tie') {
-            revealHTML = `<div style="color:var(--primary)">It's a Tie! Both sides win.</div>`;
-        } else {
-            revealHTML = `The Room Chose: <strong style="color:var(--primary)">${roomWinner === 'A' ? q.optA : q.optB}</strong>`;
-        }
+        if (roomWinner === 'Tie') revealHTML = `<div style="color:var(--primary)">It's a Tie! Both sides win.</div>`;
+        else revealHTML = `The Room Chose: <strong style="color:var(--primary)">${roomWinner === 'A' ? q.optA : q.optB}</strong>`;
         
         pIds.forEach(pid => { 
-            if (roomWinner === 'Tie' && (players[pid].guess2 === 'A' || players[pid].guess2 === 'B')) {
-                roundEarnings[pid] = 300 * mult;
-            } else if (players[pid].guess2 === roomWinner) {
-                roundEarnings[pid] = 300 * mult; 
-            }
+            if (roomWinner === 'Tie' && (players[pid].guess2 === 'A' || players[pid].guess2 === 'B')) roundEarnings[pid] = 300 * mult;
+            else if (players[pid].guess2 === roomWinner) roundEarnings[pid] = 300 * mult; 
         });
     }
     else if (q.type === 3) {
@@ -664,7 +656,6 @@ export function evaluateMultiplayerRound(players) {
 
     document.getElementById('score-board').innerHTML = ''; 
 
-    // UPDATED: Evaluation text colors
     let fbHTML = `<div style="font-size:1.3rem; margin-bottom:15px; color:var(--dark-text);">${revealHTML}</div><div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">`;
     pIds.forEach((pid, index) => {
         if (roundEarnings[pid] > 0) {
@@ -676,6 +667,12 @@ export function evaluateMultiplayerRound(players) {
             state.streaks[index] = 0;
             fbHTML += `<div style="background:rgba(214, 48, 49, 0.1); border:1px solid var(--fail); padding:8px 12px; border-radius:8px; color:var(--fail); font-weight:bold; font-size:0.9rem;">❌ ${players[pid].name}: 0</div>`;
         }
+
+        // 👈 NEW: Push calculated score to the platform array
+        results.push({
+            id: pid,
+            newScore: (players[pid].score || 0) + roundEarnings[pid]
+        });
     });
 
     fbHTML += `</div>`; 
@@ -689,7 +686,6 @@ export function evaluateMultiplayerRound(players) {
     db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'reveal' });
     document.getElementById('feedback').innerHTML = fbHTML;
     
-    // UPDATED: Scoreboard styling
     document.getElementById('score-board').innerHTML = state.rawScores.map((s, i) => `
         <div class="score-pill" style="border-color:${colors[i % colors.length]};">
             <div class="p-name" style="color:${colors[i % colors.length]}">P${i+1}</div>
@@ -697,9 +693,14 @@ export function evaluateMultiplayerRound(players) {
             <div class="p-streak" style="color:${colors[i % colors.length]}; opacity:${state.streaks[i] > 0 ? 1 : 0}">🔥 ${state.streaks[i]}</div>
         </div>`).join('');
 
-    state.curIdx++; setTimeout(nextRound, 7000); 
+    state.curIdx++; 
+    
+    // 👈 NEW: Hand the scores to the Platform, and set the local timer for the next round!
+    window.finalizeMultiplayerRound(results);
+    setTimeout(nextRound, 7000); 
 }
 
+// --- Replace endGameSequence in consensusLogic.js ---
 function endGameSequence() {
     document.getElementById('play-screen').classList.add('hidden');
     document.getElementById('final-screen').classList.remove('hidden');
@@ -714,14 +715,17 @@ function endGameSequence() {
         db.ref(`rooms/${state.roomCode}/players`).once('value', snap => {
             const players = snap.val();
             const pIds = Object.keys(players || {}).sort();
+            
             let results = pIds.map((pid, idx) => {
-                db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: state.rawScores[idx] });
-                return { name: players[pid].name, score: state.rawScores[idx] };
+                // 👈 NEW: Ask Firebase what their score is!
+                const finalFirebaseScore = players[pid].score || 0;
+                db.ref(`rooms/${state.roomCode}/players/${pid}`).update({ finalScore: finalFirebaseScore });
+                return { name: players[pid].name, score: finalFirebaseScore, id: pid };
             });
             
             results.sort((a, b) => b.score - a.score);
             db.ref(`rooms/${state.roomCode}/finalLeaderboard`).set(results);
-            // UPDATED: Podium text and border colors
+            
             let podium = `<div style="text-align: left; background: var(--surface); padding: 15px; border-radius: 12px; border: 2px solid var(--border-light);">`;
             results.forEach((p, idx) => {
                 let medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '👏'));
@@ -732,10 +736,8 @@ function endGameSequence() {
             db.ref(`rooms/${state.roomCode}/state`).set('finished');
         });
     } else {
-        // Vibrant Gradient Score Card for Solo Consensus
         const score = state.rawScores[0];
         const hypeText = score > 2000 ? "Mind Reader! 🔮" : (score > 1000 ? "Great Instincts! 🎯" : "Room Misread! 🤷");
-        
         document.getElementById('winner-text').innerHTML = `
             <div style="background: linear-gradient(135deg, var(--p1), var(--p2)); padding: 50px 20px; border-radius: 24px; color: white; box-shadow: 0 12px 24px rgba(255, 107, 107, 0.2); margin: 30px 0; text-align: center;">
                 <div style="font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; opacity: 0.9; margin-bottom: 10px;">Final Score</div>
@@ -753,6 +755,7 @@ function endGameSequence() {
     state.userStats.platformGamesPlayed++;
     localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
 }
+
 
 export function onModeSelect(mode) {
     const customInput = document.getElementById('custom-input');
