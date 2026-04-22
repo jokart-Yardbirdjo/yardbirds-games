@@ -54,7 +54,6 @@ window.selectGame = (gameId) => {
     try {
         window.loadCartridge(gameId); 
         buildSetupScreen(window.activeCartridge.manifest);
-        if (gameId === 'song_trivia') renderSubPills();
 
         document.getElementById('main-menu-screen').classList.add('hidden');
         document.getElementById('setup-screen').classList.remove('hidden');
