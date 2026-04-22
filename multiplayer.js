@@ -9,25 +9,18 @@ export function handleHostSetup() {
         hideModal('multiplayer-modal');
         return;
     }
-
     hideModal('multiplayer-modal');
     document.getElementById('setup-screen').classList.remove('hidden');
-    
     document.getElementById('start-btn-top').innerText = "🚀 CREATE MULTIPLAYER ROOM";
     document.getElementById('start-btn-top').onclick = createRoom;
-    
     const dailyContainer = document.getElementById('daily-btn-top').parentElement;
     if (dailyContainer) dailyContainer.classList.add('hidden');
-    
     const separator = document.querySelector('#setup-screen .separator-line');
     if (separator) separator.classList.add('hidden'); 
-    
     document.getElementById('menu-btn').classList.add('hidden');
     document.getElementById('stats-btn').classList.add('hidden');
-    
     const backBtn = document.getElementById('back-to-main-btn');
     if (backBtn) backBtn.innerText = "CANCEL MULTIPLAYER";
-    
     state.isMultiplayer = true;
     state.isHost = true;
 }
@@ -67,20 +60,16 @@ export async function createRoom() {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('host-lobby-screen').classList.remove('hidden');
     document.getElementById('display-room-code').innerText = state.roomCode;
-
     document.getElementById('qr-container').innerHTML = ""; 
     const joinUrl = window.location.origin + window.location.pathname + "?room=" + state.roomCode;
     new QRCode(document.getElementById("qr-container"), {
-        text: joinUrl, width: 160, height: 160,
-        colorDark : "#0a0a0c", colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
+        text: joinUrl, width: 160, height: 160, colorDark : "#0a0a0c", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M
     });
 
     db.ref(`rooms/${state.roomCode}/players`).on('value', (snapshot) => {
         const players = snapshot.val();
         const listDiv = document.getElementById('lobby-player-list');
         listDiv.innerHTML = '';
-        
         if (players) {
             const playerIds = Object.keys(players);
             state.numPlayers = playerIds.length;
@@ -136,7 +125,6 @@ export async function joinRoom() {
     db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).onDisconnect().remove();
 
     document.getElementById('join-screen').classList.add('hidden');
-    
     const waitScreen = document.createElement('div');
     waitScreen.id = 'client-wait-screen';
     waitScreen.innerHTML = `<h2 style="color:var(--brand);">You're in!</h2><p style="font-size:1.2rem;">Look at the big screen.</p>`;
@@ -153,7 +141,6 @@ export async function joinRoom() {
             db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}/finalScore`).on('value', scoreSnap => {
                 if (scoreSnap.exists()) document.getElementById('client-final-score').innerText = scoreSnap.val();
             });
-
             db.ref(`rooms/${state.roomCode}/finalLeaderboard`).once('value', lbSnap => {
                 if(lbSnap.exists()) {
                     let results = lbSnap.val();
@@ -182,7 +169,6 @@ export async function joinRoom() {
     db.ref(`rooms/${state.roomCode}/currentRound`).on('value', snap => {
         if(snap.exists() && document.getElementById('client-status')) {
             document.getElementById('client-status').innerText = `ROUND ${snap.val()}`;
-            
             document.getElementById('client-locked-screen').classList.add('hidden');
             document.getElementById('client-mc-inputs').classList.add('hidden');
             
@@ -191,11 +177,9 @@ export async function joinRoom() {
             } else {
                 document.getElementById('client-text-inputs').classList.add('hidden');
             }
-            
             if(document.getElementById('client-guess-artist')) document.getElementById('client-guess-artist').value = '';
             if(document.getElementById('client-guess-song')) document.getElementById('client-guess-song').value = '';
             if(document.getElementById('client-guess-movie')) document.getElementById('client-guess-movie').value = '';
-
             db.ref(`rooms/${state.roomCode}/players/${state.myPlayerId}`).update({ status: 'guessing', guess: null });
         }
     });
@@ -205,16 +189,13 @@ export async function joinRoom() {
         if(snap.exists() && timerContainer) {
             const time = snap.val();
             timerContainer.dataset.time = time; 
-            
             let percentage = (time / (state.timeLimit || 30)) * 100;
             let bgColor = time <= 3 ? 'var(--fail)' : 'var(--primary)';
-            
             let fill = document.getElementById('client-timer-fill');
             if (!fill) {
                 timerContainer.innerHTML = `<div class="timer-bar-container" style="margin: 15px 0;"><div id="client-timer-fill" class="timer-bar-fill" style="width: 100%;"></div></div>`;
                 fill = document.getElementById('client-timer-fill');
             }
-            
             if (fill) {
                 fill.style.width = `${percentage}%`;
                 fill.style.backgroundColor = bgColor;
@@ -228,11 +209,6 @@ export async function joinRoom() {
             if (!promptDiv) {
                 promptDiv = document.createElement('div');
                 promptDiv.id = 'client-prompt';
-                const playScreen = document.getElementById('client-play-screen');
-                const mcInputs = document.getElementById('client-mc-inputs');
-                if (playScreen && mcInputs) playScreen.insertBefore(promptDiv, mcInputs);
-            }
-            if (promptDiv.parentElement && promptDiv.parentElement.id === 'client-text-inputs') {
                 const playScreen = document.getElementById('client-play-screen');
                 const mcInputs = document.getElementById('client-mc-inputs');
                 if (playScreen && mcInputs) playScreen.insertBefore(promptDiv, mcInputs);
@@ -266,20 +242,6 @@ export async function startMultiplayerGame() {
     
     await db.ref(`rooms/${state.roomCode}/hostState`).set({ phase: 'loading' });
 
-    let masterClock = setInterval(async () => {
-        const snap = await db.ref(`rooms/${state.roomCode}/timeLeft`).once('value');
-        let time = snap.val();
-        
-        if (time > 0) {
-            time--;
-            await db.ref(`rooms/${state.roomCode}/timeLeft`).set(time);
-        } else {
-            clearInterval(masterClock);
-            const playersSnap = await db.ref(`rooms/${state.roomCode}/players`).once('value');
-            window.evaluateMultiplayerRound(playersSnap.val());
-        }
-    }, 1000);
-
     db.ref(`rooms/${state.roomCode}/players`).on('value', (snap) => {
         if (!state.isHost || !snap.exists() || state.isProcessing) return;
         
@@ -292,7 +254,6 @@ export async function startMultiplayerGame() {
         });
 
         if (allLocked && totalPlayers > 0) {
-            clearInterval(masterClock); 
             window.evaluateMultiplayerRound(players); 
         }
     });
@@ -316,7 +277,6 @@ export function submitClientTextGuess() {
     const artist = document.getElementById('client-guess-artist').value.trim();
     const song = document.getElementById('client-guess-song').value.trim();
     const movie = document.getElementById('client-guess-movie').value.trim();
-    
     const timerContainer = document.getElementById('client-timer-display');
     const currentTime = timerContainer ? (parseInt(timerContainer.dataset.time) || 0) : 0;
     
@@ -374,16 +334,10 @@ export async function finalizeMultiplayerRound(results) {
     });
 
     await db.ref(`rooms/${state.roomCode}`).update(updates);
-
     await db.ref(`rooms/${state.roomCode}/currentMC`).remove();
     await db.ref(`rooms/${state.roomCode}/currentPrompt`).remove();
 
-    setTimeout(() => {
-        state.isProcessing = false;
-        if (window.activeCartridge && window.activeCartridge.nextRound) {
-            window.activeCartridge.nextRound(); 
-        }
-    }, 4000);
+    // Notice we removed the rigid setTimeout(nextRound) here! The cartridges handle their own pacing now!
 }
 
 window.finalizeMultiplayerRound = finalizeMultiplayerRound;
