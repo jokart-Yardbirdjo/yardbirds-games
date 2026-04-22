@@ -97,17 +97,23 @@ export async function startGame() {
         document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]};"><div class="p-name" style="color:${colors[0]}">SCORE</div><div class="p-pts" style="color:var(--dark-text)">0</div><div class="p-streak" style="opacity:0">🔥 0</div></div>`;
     }
 
-    // Grab the value from the UI's custom input box
     const customInput = document.getElementById('custom-input');
     const apiKey = customInput ? customInput.value.trim() : "";
 
     // ==========================================
-    // PATH A: INFINITE AI MODE (API KEY DETECTED)
+    // PATH A: INFINITE AI MODE (CHECKS THE PILL!)
     // ==========================================
-    if (apiKey && apiKey.startsWith('sk-')) {
+    if (state.gameState.sub === 'ai_infinite') {
+        if (!apiKey || !apiKey.startsWith('sk-')) {
+            alert("Please paste a valid OpenAI API Key in the box!");
+            location.reload(); return;
+        }
+
+        // Save the key for future games
+        localStorage.setItem('consensus_openai_key', apiKey);
+
         document.getElementById('feedback').innerHTML = `<div style="color:var(--primary); font-size:1.5rem; margin-top:40px;">Generating AI Quotes...</div>`;
         
-        // Dynamically build the prompt based on the specific mode they clicked!
         let promptFocus = "";
         if (state.gameState.mode === 'movie') promptFocus = "famous movie and TV show lines";
         else if (state.gameState.mode === 'celeb') promptFocus = "viral pop-culture moments, reality TV quotes, and famous celebrity tweets";
@@ -130,10 +136,10 @@ export async function startGame() {
             
             const data = await response.json();
             state.songs = JSON.parse(data.choices[0].message.content).quotes;
-            state.globalPool = []; // No global pool needed for AI because it generates the wrong answers!
+            state.globalPool = []; 
             
             nextRound();
-            return; // Exit early so we don't load the local CSV database
+            return; 
             
         } catch(e) {
             console.error(e);
