@@ -2,6 +2,7 @@
 import { db } from './firebase.js';
 import { state, sfxTick, sfxCheer, sfxBuzzer, colors } from './state.js';
 
+// At the top of quoteLogic.js
 export const manifest = {
     id: "who_said_it",
     title: "WHO SAID IT?",
@@ -96,17 +97,17 @@ export async function startGame() {
         document.getElementById('score-board').innerHTML = `<div class="score-pill" style="border-color:${colors[0]};"><div class="p-name" style="color:${colors[0]}">SCORE</div><div class="p-pts" style="color:var(--dark-text)">0</div><div class="p-streak" style="opacity:0">🔥 0</div></div>`;
     }
 
-    // Check if the user pasted an OpenAI key to trigger Infinite Mode
+    // Grab the value from the UI's custom input box
     const customInput = document.getElementById('custom-input');
     const apiKey = customInput ? customInput.value.trim() : "";
 
     // ==========================================
-    // PATH A: INFINITE AI MODE
+    // PATH A: INFINITE AI MODE (API KEY DETECTED)
     // ==========================================
     if (apiKey && apiKey.startsWith('sk-')) {
         document.getElementById('feedback').innerHTML = `<div style="color:var(--primary); font-size:1.5rem; margin-top:40px;">Generating AI Quotes...</div>`;
         
-        // Dynamically build the prompt based on what mode they clicked
+        // Dynamically build the prompt based on the specific mode they clicked!
         let promptFocus = "";
         if (state.gameState.mode === 'movie') promptFocus = "famous movie and TV show lines";
         else if (state.gameState.mode === 'celeb') promptFocus = "viral pop-culture moments, reality TV quotes, and famous celebrity tweets";
@@ -129,10 +130,10 @@ export async function startGame() {
             
             const data = await response.json();
             state.songs = JSON.parse(data.choices[0].message.content).quotes;
-            state.globalPool = []; // No global pool needed for AI
+            state.globalPool = []; // No global pool needed for AI because it generates the wrong answers!
             
             nextRound();
-            return; // Exit early so we don't load the local database
+            return; // Exit early so we don't load the local CSV database
             
         } catch(e) {
             console.error(e);
@@ -202,7 +203,6 @@ function nextRound() {
     if (state.globalPool.length === 0 && currentData.wrong) {
         // PATH A: AI INFINITE MODE
         currentData.wrong.forEach(w => options.push({ str: w, isCorrect: false }));
-        // Use standard math random here, seeds don't matter for AI games
         options = options.sort(() => 0.5 - Math.random()); 
     } else {
         // PATH B: STANDARD LOCAL DB MODE
