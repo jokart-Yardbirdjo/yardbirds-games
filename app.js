@@ -23,7 +23,7 @@ window.requestClientLifeline = requestClientLifeline;
 // 👇 ADD THIS VALIDATOR 👇
 function validateCartridge(cartridge) {
     // 👇 Added 'renderStatsUI' to the strict contract 👇
-    const requiredExports = ['manifest', 'startGame', 'handleStop', 'resetStats', 'shareChallenge', 'renderStatsUI'];
+    const requiredExports = ['manifest', 'startGame', 'handleStop', 'resetStats', 'shareChallenge', 'renderStatsUI', 'evaluateGuess'];
     const missing = requiredExports.filter(req => typeof cartridge[req] === 'undefined');
     
     if (missing.length > 0) {
