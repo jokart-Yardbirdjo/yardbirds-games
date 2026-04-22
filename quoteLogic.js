@@ -8,6 +8,18 @@ export const manifest = {
     title: "WHO SAID IT?",
     subtitle: "Pop Culture & Iconic Quotes",
     hasDaily: false,
+    rulesHTML: `
+        <h2>Who Said It?</h2>
+        <p style="color:#ccc; line-height: 1.6;">
+            Read the quote on the screen and identify who said it as fast as possible. 
+            The faster you answer, the more points you earn. 
+            <br><br>
+            Get 3 right in a row to ignite a streak bonus!
+        </p>
+        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px; width: 100%;">
+            Got it!
+        </button>
+    `,
     modes: [
         { id: "celeb", title: "🎤 Celebs & Creators", desc: "Celebrities, viral Tweets, and TikTok sounds." },
         { id: "movie", title: "🎬 Screen & Stage", desc: "Iconic lines from Movies, Netflix, and TV shows." },
