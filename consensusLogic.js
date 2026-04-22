@@ -343,7 +343,7 @@ function nextRound() {
                   .then(snap => evaluateMultiplayerRound(snap.val()))
                   .catch(err => { console.error(err); evaluateMultiplayerRound({}); });
             } else {
-                evaluateSoloGuess(); 
+                evaluateGuess(); 
             }
         }
     }, 1000);
@@ -520,18 +520,18 @@ function renderSoloUI(q) {
             btn.onclick = (e) => { 
                 state.soloGuess = idx; 
                 e.target.classList.add('correct'); // Just visual feedback
-                evaluateSoloGuess(); 
+                evaluateGuess(); 
             };
             mcFields.appendChild(btn);
         });
     } else if (q.type === 5) {
         // UPDATED: Input styling
         mcFields.innerHTML = `<input type="number" id="solo-num" placeholder="Your Exact Guess" style="width:100%; padding:15px; background:white; color:var(--dark-text); border:2px solid var(--border-light); border-radius:8px; font-size:1.2rem; outline:none; margin-bottom:10px;">
-                              <button class="btn btn-main" onclick="window.activeCartridge.evaluateSoloGuess('num')">SUBMIT</button>`;
+                              <button class="btn btn-main" onclick="window.activeCartridge.evaluateGuess('num')">SUBMIT</button>`;
     }
 }
 
-export function evaluateSoloGuess(source) {
+export function evaluateGuess(source) {
     if (state.isProcessing) return;
     
     if (source === 'num') {
