@@ -526,6 +526,10 @@ export async function evaluateMultiplayerRound(players) {
     const results = [];
     const isDouble = !isSuddenDeath() && state.doubleRounds.includes(state.curIdx);
     let fbHTML = `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:15px; font-weight:bold;">`;
+    
+    // 👇 NEW: Track if anyone ruins the run
+    let fatalMistake = false;
+    let guiltyPlayer = "";
 
     Object.keys(players).forEach((pid, index) => {
         const p = players[pid];
@@ -534,22 +538,43 @@ export async function evaluateMultiplayerRound(players) {
 
         if (correct) {
             state.streaks[index] = (state.streaks[index] || 0) + 1;
-            roundPts = p.guess.time * 10;
+            const speedFactor = p.guess.time / state.timeLimit;
+            roundPts = Math.round(100 + (speedFactor * 100)); // Standard speed points
+            
             if (state.streaks[index] > 0 && state.streaks[index] % 3 === 0) roundPts += 50;
             if (isDouble) roundPts *= 2;
+            
             fbHTML += `<div style="color:var(--success); font-size:1.1rem;">✅ ${p.name}: +${roundPts}</div>`;
             state.rawScores[index] = (state.rawScores[index] || 0) + roundPts;
         } else {
             state.streaks[index] = 0;
             fbHTML += `<div style="color:var(--fail); font-size:1.1rem;">❌ ${p.name}: 0</div>`;
+            
+            // 👇 NEW: If it's Sudden Death and they missed, trigger the fail state
+            if (isSuddenDeath()) {
+                fatalMistake = true;
+                guiltyPlayer = p.name;
+            }
         }
 
         results.push({ id: pid, newScore: (p.score || 0) + roundPts });
     });
 
     fbHTML += `</div>`;
-    document.getElementById('feedback').innerHTML = fbHTML;
+    
+    // 👇 NEW: Handle the Room-Wide Elimination
+    if (fatalMistake) {
+        document.getElementById('feedback').innerHTML = fbHTML + `
+            <div style="color:var(--fail); font-size:2rem; font-weight:900; margin-top:15px; line-height:1;">💀 FATAL MISTAKE!</div>
+            <div style="color:var(--fail); font-size:1.2rem; margin-top:5px;"><strong>${guiltyPlayer}</strong> eliminated the room!</div>
+        `;
+        window.finalizeMultiplayerRound(results);
+        setTimeout(endGameSequence, 5000); // Send everyone to the final scoreboard
+        return; 
+    }
 
+    // Otherwise, advance normally
+    document.getElementById('feedback').innerHTML = fbHTML;
     state.curIdx++;
     window.finalizeMultiplayerRound(results);
     setTimeout(nextRound, 4000);
