@@ -315,7 +315,7 @@ export function startGame() {
 // ─── nextRound ────────────────────────────────────────────────────────────────
 
 export function nextRound() {
-    if (!isSuddenDeath() && state.curIdx >= state.maxRounds) { endGameSequence(); return; }
+    if (state.curIdx >= state.maxRounds) { endGameSequence(); return; }
 
     state.isProcessing = false;
     _currentProblem = generateMathProblem();
@@ -621,15 +621,13 @@ function endGameSequence() {
     let scoreDisplay, hypeText, gradientStyle;
 
     if (isSD) {
-        scoreDisplay   = maxScore; // Show actual points!
-        const beatGauntlet = state.sdRoundsAlive >= state.maxRounds;
+        scoreDisplay   = maxScore; // 👈 Now it shows the points!
+        const beatGauntlet = state.sdRoundsAlive >= state.maxRounds; // 👈 Check survival using sdRoundsAlive
         
-        // Give them a gold gradient if they survived the whole requested game
         gradientStyle  = beatGauntlet ? 'linear-gradient(135deg, #f39c12, #d35400)' : 'linear-gradient(135deg, #d63031, #6e0000)';
         hypeText = beatGauntlet ? "GAUNTLET CLEARED! 🏆"
-                 : scoreDisplay >= 10 ? "Impressive Run! 🔥"
-                 : scoreDisplay >= 5  ? "Decent Effort! 💪"
-                 : "One and done! 😬";
+                 : state.sdRoundsAlive >= 5 ? "Impressive Run! 🔥"
+                 : "Eliminated! 💀";
     } else {
         scoreDisplay  = maxScore;
         gradientStyle = 'linear-gradient(135deg, var(--primary), #8e2de2)';
@@ -642,8 +640,7 @@ function endGameSequence() {
         <div style="background:${gradientStyle}; padding:50px 20px; border-radius:24px; color:white;
              box-shadow:0 12px 24px rgba(0,0,0,0.15); margin:30px 0; text-align:center;">
             <div style="font-size:1.1rem; font-weight:600; text-transform:uppercase; letter-spacing:2px; opacity:0.9; margin-bottom:10px;">
-                ${isSD ? 'Rounds Survived' : 'Final Score'}
-            </div>
+                Final Score </div>
             <div style="font-size:5.5rem; font-weight:900; line-height:1; font-family:'Courier New',monospace; text-shadow:2px 4px 10px rgba(0,0,0,0.2);">
                 ${scoreDisplay}
             </div>
