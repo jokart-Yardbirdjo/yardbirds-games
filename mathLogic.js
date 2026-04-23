@@ -19,17 +19,19 @@ export const manifest = {
         <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top:15px; width:100%;">Let's Go!</button>
     `,
     modes: [
+        // Moved Mixed to the top so it defaults!
+        { id: "mixed",          title: "🎲 Mixed",          desc: "All operators, random order. Maximum chaos." },
         { id: "addition",       title: "➕ Addition",       desc: "Which equation sums to the target?" },
         { id: "subtraction",    title: "➖ Subtraction",    desc: "Spot the right difference." },
         { id: "multiplication", title: "✖️ Multiplication", desc: "Find the equation that hits the product." },
-        { id: "division",       title: "➗ Division",       desc: "Which pair divides cleanly to the target?" },
-        { id: "mixed",          title: "🎲 Mixed",          desc: "All operators, random order. Maximum chaos." }
+        { id: "division",       title: "➗ Division",       desc: "Which pair divides cleanly to the target?" }
     ],
     levels: [
+        // Moved Sudden Death to the top so it defaults!
+        { id: "sudden_death", title: "💀 Sudden Death", desc: "10s per round. One wrong answer ends it all." },
         { id: "easy",         title: "🟢 Easy",         desc: "20s per round. One wrong option fades at 10s." },
-        // { id: "medium",       title: "🟡 Standard",     desc: "12s per round. No help." },
-        { id: "hard",         title: "🔴 Lightning",    desc: "6s per round. Pure reflexes." },
-        { id: "sudden_death", title: "💀 Sudden Death", desc: "10s per round. One wrong answer ends it all." }
+       // { id: "medium",       title: "🟡 Standard",     desc: "12s per round. No help." },
+        { id: "hard",         title: "🔴 Lightning",    desc: "6s per round. Pure reflexes." }
     ],
     clientUI: "multiple-choice"
 };
@@ -457,7 +459,7 @@ export function evaluateGuess(isCorrect, clickedBtn = null) {
         state.sdRoundsAlive++;
 
         const isDouble  = !isSuddenDeath() && state.doubleRounds.includes(state.curIdx);
-        let roundPts    = isSuddenDeath() ? 100 : state.timeLeft * 10;
+        let roundPts    = state.timeLeft * 10; // 👈 Sudden Death now uses standard speed points
         const streakBonus = (state.streaks[0] > 0 && state.streaks[0] % 3 === 0);
         if (streakBonus) roundPts += 50;
         if (isDouble)    roundPts *= 2;
@@ -556,7 +558,6 @@ export async function evaluateMultiplayerRound(players) {
 // ─── endGameSequence ──────────────────────────────────────────────────────────
 
 function getNormalizedScore(rawScore) {
-    if (isSuddenDeath()) return state.sdRoundsAlive || 0;
     const maxPossible = state.maxRounds * 250;
     return Math.min(1000, Math.round((rawScore / maxPossible) * 1000));
 }
@@ -620,8 +621,8 @@ function endGameSequence() {
     let scoreDisplay, hypeText, gradientStyle;
 
     if (isSD) {
-        scoreDisplay   = state.sdRoundsAlive;
-        const beatGauntlet = scoreDisplay >= state.maxRounds;
+        scoreDisplay   = maxScore; // Show actual points!
+        const beatGauntlet = state.sdRoundsAlive >= state.maxRounds;
         
         // Give them a gold gradient if they survived the whole requested game
         gradientStyle  = beatGauntlet ? 'linear-gradient(135deg, #f39c12, #d35400)' : 'linear-gradient(135deg, #d63031, #6e0000)';
