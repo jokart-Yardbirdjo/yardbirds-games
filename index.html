@@ -1,37 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ██╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ██║
+  ██████╔╝███████║███████║███████╗█████╗      ██║
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ╚═╝
+  ██║     ██║  ██║██║  ██║███████║███████╗    ██╗
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝    ╚═╝
+
+  YARDBIRD'S GAMES — index.html  (Master Entry Point)
+  ─────────────────────────────────────────────────────
+  ARCHITECTURE OVERVIEW
+  ─────────────────────────────────────────────────────
+  This file is the single HTML shell for the entire platform.
+  ALL game logic lives in separate "cartridge" JS modules
+  (gameLogic.js, mathLogic.js, etc.) loaded via app.js.
+
+  The HTML is divided into 8 clearly labelled phases:
+
+    PHASE 1 — Document Head & SDKs
+    PHASE 2 — Platform Modals  (Rules · Stats · Multiplayer)
+    PHASE 3 — The Header       (Global navigation bar)
+    PHASE 4 — Multiplayer Lobbies  (Host room · Phone join)
+    PHASE 5 — Client Screens   (Phone controller UI)
+    PHASE 6 — Main Menu        (Cartridge selection grid)
+    PHASE 7 — Host / Solo Screens  (Setup · Play · Finale)
+    PHASE 8 — Boot Scripts     (Module loader · Animations)
+
+  SCREEN VISIBILITY SYSTEM
+  ─────────────────────────────────────────────────────
+  Every <div id="*-screen"> starts with class="hidden".
+  JS removes "hidden" to reveal the correct screen at runtime.
+  Only ONE screen should ever be visible at a time.
+  The CSS rule  .hidden { display: none !important; }  enforces this.
+
+  CARTRIDGE SYSTEM (how to add a new game)
+  ─────────────────────────────────────────────────────
+  1. Create myGame.js  —  export a `manifest` object + all
+     required hook functions (startGame, evaluateGuess, etc.)
+  2. Import + register it in app.js  window.loadCartridge()
+  3. Add a <div class="select-card game-card"> tile in PHASE 6
+  4. That's it — every screen below reuses itself per cartridge.
+  ============================================================ -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗     ██╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ███║
+  ██████╔╝███████║███████║███████╗█████╗      ╚██║
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝       ██║
+  ██║     ██║  ██║██║  ██║███████║███████╗     ██║
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝    ╚═╝
+
+  PHASE 1 — DOCUMENT HEAD & SDKs
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    · Declare character encoding, viewport lock, and page title.
+    · Load all third-party SDKs that must be globally available
+      BEFORE the ES-module bundle (app.js) executes.
+    · Register PWA / home-screen metadata for iOS and Android.
+
+  EXTERNAL SCRIPTS (load order matters):
+    1. firebase-app-compat.js   — Core Firebase SDK (compat mode
+       exposes window.firebase so non-module scripts can reach it)
+    2. firebase-database-compat.js — Realtime Database add-on.
+       Must follow firebase-app.
+    3. qrcode.min.js — QR code generator used in the host lobby
+       to let phones scan-to-join instead of typing a room code.
+
+  PWA TAGS:
+    · apple-mobile-web-app-capable  — Enables standalone full-
+      screen mode when added to iOS home screen.
+    · theme-color — Colours the Android status bar to match the
+      app's dark background (#0a0a0c).
+  ============================================================ -->
 <head>
     <meta charset="UTF-8">
+
+    <!--
+      VIEWPORT — critical for mobile gameplay:
+        · width=device-width   — match CSS px to physical screen width
+        · maximum-scale=1.0    — prevent accidental pinch-zoom mid-game
+        · user-scalable=no     — lock zoom; keeps tap targets predictable
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Yardbird's Games</title>
+
+    <!-- Main stylesheet. Uses CSS custom properties (--primary, --p1…p4,
+         --surface, etc.) so every cartridge automatically inherits the
+         platform's design tokens without extra CSS files. -->
     <link rel="stylesheet" href="style.css">
 
+    <!-- ── FIREBASE (must load before app.js) ── -->
+    <!-- firebase-app-compat: initialises firebase.app() on window -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <!-- firebase-database-compat: attaches firebase.database() for
+         real-time multiplayer room state (lobby, guesses, scores) -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+
+    <!-- ── QR CODE LIBRARY ──
+         Used in the host lobby (PHASE 4) to render a scannable QR
+         code pointing to the auto-join URL: ?room=XXXX
+         Docs: https://github.com/davidshimjs/qrcodejs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+
+    <!-- ── APP ICON & PWA METADATA ── -->
+    <!-- Standard favicon -->
     <link rel="icon" href="icon.png">
+
+    <!-- iOS home-screen icon (must be PNG, no rounding needed;
+         iOS clips it automatically) -->
     <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Hides Safari UI when launched from home screen on iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Android Chrome equivalent of the above -->
     <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS status-bar tint — "black-translucent" lets the app
+         bleed colour behind the notch on modern iPhones -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Label shown under the icon on the iOS home screen -->
     <meta name="apple-mobile-web-app-title" content="Yardbird's Games">
+
+    <!-- Android Chrome status-bar / task-switcher accent colour -->
     <meta name="theme-color" content="#0a0a0c">
-
 </head>
-<body>
 
+
+<body>
+<!-- ============================================================
+  Everything inside <body> is hidden by default and revealed
+  selectively by JavaScript.  The outermost layout wrapper is:
+
+    .game-wrapper  (centres content, max-width 600 px)
+      └── .container  (the white card — THE canvas for all screens)
+
+  Modals sit OUTSIDE .game-wrapper so they overlay the whole
+  viewport with a full-screen dimmed backdrop (.modal-overlay).
+  ============================================================ -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ██████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ╚════██╗
+  ██████╔╝███████║███████║███████╗█████╗        ███╔╝
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝       ██╔══╝
+  ██║     ██║  ██║██║  ██║███████║███████╗     ██████╗
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝    ╚═════╝
+
+  PHASE 2 — PLATFORM MODALS
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    Floating dialog overlays that layer on top of any screen.
+    All three use class="modal-overlay hidden" — the hidden class
+    is removed by  showModal(id)  and re-added by  hideModal(id)
+    (both defined in ui.js and attached to window in app.js).
+
+  MODALS IN THIS SECTION:
+    A) #rules-modal    — How-to-play instructions.
+                         Content is DYNAMICALLY REPLACED by
+                         updatePlatformUI(context) in ui.js so
+                         each cartridge shows its own rules.
+                         The static content below is only the
+                         Song Trivia default / initial fallback.
+
+    B) #stats-modal    — Lifetime Locker Room.
+                         The inner HTML is FULLY REBUILT at
+                         runtime by openStatsLocker() in ui.js
+                         based on which cartridge is active.
+                         The static skeleton here (stat-grid,
+                         trophy-row elements) serves as the
+                         Song Trivia default.
+
+    C) #multiplayer-modal — Party Mode entry point.
+                         Two buttons branch the flow:
+                           HOST  → handleHostSetup()  (multiplayer.js)
+                                   Transitions to setup-screen with a
+                                   "Create Room" button replacing "Play".
+                           JOIN  → handleJoinScreen() (multiplayer.js)
+                                   Reveals join-screen (PHASE 4).
+  ============================================================ -->
+
+<!-- ─── MODAL A: Rules / How To Play ─────────────────────── -->
+<!--
+  NOTE: The content inside .modal-content is the STATIC DEFAULT
+  for Song Trivia.  At runtime, updatePlatformUI() in ui.js
+  completely replaces it when the player selects a different game.
+  If you add a new cartridge, add a new `else if` branch there.
+-->
 <div id="rules-modal" class="modal-overlay hidden">
     <div class="modal-content">
         <h2>How to Play</h2>
+
+        <!-- Default rules text — Song Trivia specific.
+             Replaced at runtime for other cartridges. -->
         <ul style="padding-left: 20px; font-size: 0.95rem; line-height: 1.6; color: #ccc;">
             <li><strong>Modes:</strong> Play Classic Genre, Artist-Specific, or Guess the Movie!</li>
             <li><strong>Today Three:</strong> A daily synced 3-round challenge spanning the 80s, 90s, and 2000s.</li>
-            <li><strong>The Lifeline (Easy/Medium):</strong> You have 20 seconds to type an answer. If you get stuck at 10 seconds, Multiple Choice options will automatically appear to save you. (Or press the button to force it early!)</li>
+            <li><strong>The Lifeline (Easy/Medium):</strong> You have 20 seconds to type an answer.
+                If you get stuck at 10 seconds, Multiple Choice options will automatically appear
+                to save you. (Or press the button to force it early!)</li>
             <li><strong>Epic Intros (Hard):</strong> Set the level to Hard to only get a 10-second snippet (No lifeline!).</li>
-            <li><strong>1000 Point Ceiling:</strong> Scores are mathematically normalized to a perfect 1000, no matter how many rounds you play.</li>
+            <li><strong>1000 Point Ceiling:</strong> Scores are mathematically normalized to a perfect
+                1000, no matter how many rounds you play.</li>
         </ul>
-        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it! Let's Play</button>
+
+        <!-- Dismiss button — calls hideModal() from ui.js -->
+        <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">
+            Got it! Let's Play
+        </button>
+
+        <!-- Version / credits footer — update when shipping new versions -->
         <div style="text-align:center; color:#555; margin-top:20px; font-size:0.8rem; line-height: 1.4;">
             <strong>Yardbird's Song Trivia v7.0 Master Edition</strong><br>
             Developed by Karthik Raja, 2026
@@ -39,9 +223,31 @@
     </div>
 </div>
 
+
+<!-- ─── MODAL B: Stats / Lifetime Locker Room ─────────────── -->
+<!--
+  IMPORTANT: This entire inner HTML is rebuilt dynamically by
+  openStatsLocker() in ui.js whenever the button is tapped.
+  The static markup below is the Song Trivia version and acts
+  as a safe visual fallback if JS hasn't run yet.
+
+  stat-grid IDs used by the Song Trivia static fallback:
+    #stat-games   — total games played
+    #stat-acc     — accuracy percentage
+    #stat-hs-text — text-mode high score
+    #stat-snip    — sniper hits (correct before 3s)
+
+  Trophy rows:
+    Each .trophy-row gets class "unlocked" added dynamically
+    when the corresponding trophy flag is true in localStorage.
+    The CSS .trophy-row.unlocked rule turns the icon from
+    grayscale to full colour and adds a gold border.
+-->
 <div id="stats-modal" class="modal-overlay hidden">
     <div class="modal-content">
         <h2>Lifetime Locker Room</h2>
+
+        <!-- 2×2 grid of key stats.  Values are injected by openStatsLocker(). -->
         <div class="stat-grid">
             <div class="stat-box">
                 <div style="font-size:0.7rem; color:#888; text-transform:uppercase;">Games Played</div>
@@ -61,277 +267,1076 @@
             </div>
         </div>
 
-        <h3 style="color:#fff; font-size:1rem; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px;">Trophy Cabinet</h3>
-        
+        <!-- Trophy Cabinet — Song Trivia specific.
+             Each .trophy-row gets class "unlocked" via JS.
+             IDs are used by populateStats() / openStatsLocker(). -->
+        <h3 style="color:#fff; font-size:1rem; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:15px;">
+            Trophy Cabinet
+        </h3>
+
+        <!-- 🏆 Score > 900/1000 in a single game -->
         <div class="trophy-row" id="trophy-perf">
             <div class="trophy-icon">🏆</div>
-            <div class="trophy-text"><h4>The Perfectionist</h4><p>Score higher than 900/1000 points.</p></div>
-        </div>
-        <div class="trophy-row" id="trophy-mara">
-            <div class="trophy-icon">🏃</div>
-            <div class="trophy-text"><h4>The Marathoner</h4><p>Complete a grueling 20-Round game.</p></div>
-        </div>
-        <div class="trophy-row" id="trophy-snip">
-            <div class="trophy-icon">🎯</div>
-            <div class="trophy-text"><h4>The Sniper</h4><p>Guess 10 songs correctly in under 3 seconds.</p></div>
-        </div>
-        <div class="trophy-row" id="trophy-streak">
-            <div class="trophy-icon">🔥</div>
-            <div class="trophy-text"><h4>The Daily Devotee</h4><p>Play Yardbird 5 days in a row.</p></div>
-        </div>
-        <div class="trophy-row" id="trophy-expl">
-            <div class="trophy-icon">🗺️</div>
-            <div class="trophy-text"><h4>The Explorer</h4><p>Play all 3 game modes (Genre, Artist, Movie).</p></div>
+            <div class="trophy-text">
+                <h4>The Perfectionist</h4>
+                <p>Score higher than 900/1000 points.</p>
+            </div>
         </div>
 
+        <!-- 🏃 Complete a 20-round game -->
+        <div class="trophy-row" id="trophy-mara">
+            <div class="trophy-icon">🏃</div>
+            <div class="trophy-text">
+                <h4>The Marathoner</h4>
+                <p>Complete a grueling 20-Round game.</p>
+            </div>
+        </div>
+
+        <!-- 🎯 Accumulate 10 sniper hits (correct guess < 3s remaining) -->
+        <div class="trophy-row" id="trophy-snip">
+            <div class="trophy-icon">🎯</div>
+            <div class="trophy-text">
+                <h4>The Sniper</h4>
+                <p>Guess 10 songs correctly in under 3 seconds.</p>
+            </div>
+        </div>
+
+        <!-- 🔥 5-day consecutive play streak -->
+        <div class="trophy-row" id="trophy-streak">
+            <div class="trophy-icon">🔥</div>
+            <div class="trophy-text">
+                <h4>The Daily Devotee</h4>
+                <p>Play Yardbird 5 days in a row.</p>
+            </div>
+        </div>
+
+        <!-- 🗺️ Play Genre + Artist + Movie mode at least once each -->
+        <div class="trophy-row" id="trophy-expl">
+            <div class="trophy-icon">🗺️</div>
+            <div class="trophy-text">
+                <h4>The Explorer</h4>
+                <p>Play all 3 game modes (Genre, Artist, Movie).</p>
+            </div>
+        </div>
+
+        <!-- Action row: close dismisses the modal;
+             reset calls activeCartridge.resetStats() via app.js -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-            <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">Close</button>
-            <button class="btn btn-reset" onclick="resetStats()" style="margin-top: 0; padding: 16px;">Reset Stats</button>
+            <button class="btn btn-main" onclick="hideModal('stats-modal')" style="flex: 1; margin-right: 10px;">
+                Close
+            </button>
+            <button class="btn btn-reset" onclick="resetStats()" style="margin-top: 0; padding: 16px;">
+                Reset Stats
+            </button>
         </div>
     </div>
 </div>
 
+
+<!-- ─── MODAL C: Multiplayer / Party Mode ─────────────────── -->
+<!--
+  This is the ENTRY POINT for all multiplayer flows.
+  It branches into two completely different setups:
+
+  [HOST] path  →  handleHostSetup() in multiplayer.js
+    · Requires a game cartridge to already be selected.
+    · Swaps setup-screen's "Play" button for "Create Room".
+    · Sets state.isMultiplayer = true, state.isHost = true.
+
+  [JOIN] path  →  handleJoinScreen() in multiplayer.js
+    · Hides setup-screen, shows join-screen (PHASE 4).
+    · Adds CSS class "client-mode" to <body>, which locks
+      the header to client-only nav via CSS.
+    · Sets state.isMultiplayer = true, state.isHost = false.
+
+  DESIGN NOTE: This modal is triggered by the ☰ (menu) button
+  in the header. On the main menu the ☰ button is hidden;
+  it only appears after a cartridge is selected.
+-->
 <div id="multiplayer-modal" class="modal-overlay hidden">
     <div class="modal-content" style="text-align: center;">
         <h2 style="margin-bottom: 25px; color: var(--brand);">Party Mode</h2>
-        
-        <button class="btn btn-daily" onclick="handleHostSetup()">📺 HOST A GAME (TV/LAPTOP)</button>
-        <div style="font-size:0.75rem; color:#aaa; margin: 10px 0 25px 0; text-transform:uppercase; font-weight:bold;">Control the music and display the board</div>
-        
-        <button class="btn btn-main" onclick="handleJoinScreen()">📱 JOIN A GAME (PHONE)</button>
-        <div style="font-size:0.75rem; color:#aaa; margin: 10px 0 25px 0; text-transform:uppercase; font-weight:bold;">Use your phone as a Kahoot-style controller</div>
-        
+
+        <!-- HOST path: meant for the TV / laptop running the board -->
+        <button class="btn btn-daily" onclick="handleHostSetup()">
+            📺 HOST A GAME (TV/LAPTOP)
+        </button>
+        <div style="font-size:0.75rem; color:#aaa; margin: 10px 0 25px 0; text-transform:uppercase; font-weight:bold;">
+            Control the music and display the board
+        </div>
+
+        <!-- JOIN path: meant for phones acting as Kahoot controllers -->
+        <button class="btn btn-main" onclick="handleJoinScreen()">
+            📱 JOIN A GAME (PHONE)
+        </button>
+        <div style="font-size:0.75rem; color:#aaa; margin: 10px 0 25px 0; text-transform:uppercase; font-weight:bold;">
+            Use your phone as a Kahoot-style controller
+        </div>
+
         <hr class="separator-line">
-        
-        <button class="btn btn-alt" onclick="hideModal('multiplayer-modal')">▶ BACK TO SOLO</button>
+
+        <!-- Escape hatch — returns to whatever screen was visible before -->
+        <button class="btn btn-alt" onclick="hideModal('multiplayer-modal')">
+            ▶ BACK TO SOLO
+        </button>
     </div>
 </div>
 
+
+<!-- ============================================================
+  ── LAYOUT WRAPPER ──────────────────────────────────────────
+  .game-wrapper  centres .container horizontally and limits width.
+  .container     is the white rounded card that IS the app canvas.
+                 All "screens" below live inside it as siblings.
+                 JS shows/hides them using the .hidden class.
+  ============================================================ -->
 <div class="game-wrapper">
     <div class="container">
-        
-        <div id="game-header">
-            <button onclick="showModal('multiplayer-modal')" class="header-btn" id="menu-btn" style="left: 0; font-size: 1.2rem; padding-bottom: 4px;">☰</button>
-            
-            <h1 id="main-title">YARDBIRD'S SONG TRIVIA</h1>
-            <button onclick="showModal('rules-modal')" class="header-btn" id="info-btn">i</button>
-            <button onclick="openStatsLocker()" class="header-btn" id="stats-btn">📊</button>
-        </div>
 
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ██████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ╚════██╗
+  ██████╔╝███████║███████║███████╗█████╗           ██╔╝
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝          ██╔╝
+  ██║     ██║  ██║██║  ██║███████║███████╗        ██║
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝        ╚═╝
+
+  PHASE 3 — THE HEADER
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    · Persistent navigation bar visible on every screen.
+    · Uses CSS `position: relative` with absolute-positioned
+      buttons flanking a centred title.
+    · Buttons are selectively hidden / shown by updatePlatformUI()
+      in ui.js depending on which screen is active.
+
+  BUTTONS:
+    #menu-btn  (☰, left)
+      · Opens #multiplayer-modal.
+      · Hidden on the main menu (you must pick a game first).
+      · Hidden in client mode (phones don't need to host).
+
+    #main-title  (centred h1)
+      · Set to "YARDBIRD'S GAMES" on the main menu.
+      · Replaced with the active cartridge's manifest.title
+        when a game is loaded (e.g. "SONG TRIVIA").
+      · Also updated to "🌍 TODAY THREE CHALLENGE" during
+        the daily challenge mode.
+
+    #info-btn  (i, right)
+      · Opens #rules-modal.
+      · Always visible; content swaps per cartridge.
+
+    #stats-btn  (📊, far right)
+      · Calls openStatsLocker() in ui.js.
+      · Content rebuilds dynamically per active cartridge.
+      · Hidden on the main menu (no active cartridge yet).
+
+  CSS BEHAVIOUR:
+    · .home-screen is toggled on #game-header when on the main menu.
+      It enlarges the title font and resets padding so it looks
+      like a standalone marquee heading rather than a nav label.
+  ============================================================ -->
+
+        <div id="game-header">
+
+            <!-- ☰ Menu / Party Mode button (hidden on main menu) -->
+            <button onclick="showModal('multiplayer-modal')"
+                    class="header-btn"
+                    id="menu-btn"
+                    style="left: 0; font-size: 1.2rem; padding-bottom: 4px;">
+                ☰
+            </button>
+
+            <!-- Dynamic page title — updated by JS on every screen change -->
+            <h1 id="main-title">YARDBIRD'S SONG TRIVIA</h1>
+
+            <!-- ℹ Info / Rules button — always visible -->
+            <button onclick="showModal('rules-modal')" class="header-btn" id="info-btn">i</button>
+
+            <!-- 📊 Stats / Locker Room button (hidden on main menu) -->
+            <button onclick="openStatsLocker()" class="header-btn" id="stats-btn">📊</button>
+
+        </div><!-- /#game-header -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ██╗  ██╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ██║  ██║
+  ██████╔╝███████║███████║███████╗█████╗      ███████║
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ╚════██║
+  ██║     ██║  ██║██║  ██║███████║███████╗         ██║
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝         ╚═╝
+
+  PHASE 4 — MULTIPLAYER LOBBIES
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    Two screens that handle room creation and joining BEFORE the
+    game starts.  One screen per role (host vs. phone client).
+
+  ─── SCREEN A: #join-screen ──────────────────────────────────
+    Shown when a PHONE player taps "Join a Game" in the modal.
+    handleJoinScreen() in multiplayer.js reveals this screen.
+
+    FIELDS:
+      #join-code  — 4-character room code typed in uppercase.
+                    maxlength=4 prevents over-entry.
+      #join-name  — Nickname shown on the host lobby list and
+                    throughout the game. maxlength=12.
+
+    FLOW:
+      joinRoom() in multiplayer.js validates both inputs,
+      looks up the room in Firebase, and if valid, removes this
+      screen and shows #client-play-screen (PHASE 5).
+      On error, #join-feedback shows a red message.
+
+    AUTO-JOIN:
+      If the URL contains ?room=XXXX (from a QR code scan),
+      app.js  window.onload  pre-fills #join-code and focuses
+      #join-name automatically so the user just types their name.
+
+  ─── SCREEN B: #host-lobby-screen ────────────────────────────
+    Shown to the HOST after createRoom() fires in multiplayer.js.
+    Remains visible until all players join and host clicks Start.
+
+    KEY ELEMENTS:
+      #display-room-code — Large monospace 4-letter code.
+                           Set by createRoom() in multiplayer.js.
+      #qr-container      — QRCode.js renders a scannable QR here
+                           pointing to ?room=XXXX.
+      #lobby-player-list — Real-time list of connected player pills.
+                           Each pill is coloured with colors[index]
+                           from state.js as players join.
+      #player-count      — Live count, updated by Firebase listener.
+      #start-multiplayer-btn — Disabled until ≥1 player connected.
+                           Calls startMultiplayerGame() which fires
+                           the Firebase state change to 'playing'.
+  ============================================================ -->
+
+        <!-- ─── SCREEN A: Phone Join Screen ─────────────── -->
         <div id="join-screen" class="hidden">
             <h2 style="color:var(--highlight); margin-top:0;">Join Party</h2>
-            <input type="text" id="join-code" placeholder="4-LETTER CODE" style="text-transform:uppercase; text-align:center; font-size:1.5rem; letter-spacing:5px;" maxlength="4" autocomplete="off">
-            <input type="text" id="join-name" placeholder="Your Nickname" style="text-align:center; font-size:1.2rem; margin-top:15px;" maxlength="12" autocomplete="off">
-            <button class="btn btn-main" style="margin-top:20px;" onclick="joinRoom()">JOIN ROOM</button>
-            <button class="btn btn-reset" onclick="location.reload()">Back</button>
-            <div id="join-feedback" style="color:var(--fail); margin-top:15px; font-weight:bold;"></div>
-        </div>
 
+            <!-- Room code: uppercased via CSS, limited to 4 chars -->
+            <input type="text"
+                   id="join-code"
+                   placeholder="4-LETTER CODE"
+                   style="text-transform:uppercase; text-align:center; font-size:1.5rem; letter-spacing:5px;"
+                   maxlength="4"
+                   autocomplete="off">
+
+            <!-- Nickname visible to all players on the host screen -->
+            <input type="text"
+                   id="join-name"
+                   placeholder="Your Nickname"
+                   style="text-align:center; font-size:1.2rem; margin-top:15px;"
+                   maxlength="12"
+                   autocomplete="off">
+
+            <!-- Calls joinRoom() → validates → connects to Firebase room -->
+            <button class="btn btn-main" style="margin-top:20px;" onclick="joinRoom()">
+                JOIN ROOM
+            </button>
+
+            <!-- Hard reload = clean slate back to main menu -->
+            <button class="btn btn-reset" onclick="location.reload()">Back</button>
+
+            <!-- Error message container — shown in red on bad code / name -->
+            <div id="join-feedback" style="color:var(--fail); margin-top:15px; font-weight:bold;"></div>
+        </div><!-- /#join-screen -->
+
+
+        <!-- ─── SCREEN B: Host Lobby / Waiting Room ──────── -->
         <div id="host-lobby-screen" class="hidden">
             <h2 style="color:var(--highlight); margin-top:0;">Waiting for players...</h2>
-            <div style="font-size:1.1rem; color:#aaa; margin-bottom:10px;">Join at <span style="color:#fff; font-weight:bold;">yardbirdgames.com</span></div>
-            <div style="font-size:0.9rem; color:#888; text-transform:uppercase;">Room Code:</div>
-            <div id="display-room-code" style="font-size:4rem; font-weight:900; color:var(--brand); letter-spacing:8px; margin:10px 0; font-family:'Courier New', monospace;">----</div>
-            
-            <div style="margin-bottom: 20px;">
-                <div id="qr-container" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.5);"></div>
-                <div style="font-size: 0.8rem; color: #aaa; margin-top: 10px; text-transform: uppercase; font-weight: bold;">Scan to Auto-Join</div>
+
+            <!-- Domain hint for players who missed the QR code -->
+            <div style="font-size:1.1rem; color:#aaa; margin-bottom:10px;">
+                Join at <span style="color:#fff; font-weight:bold;">yardbirdgames.com</span>
             </div>
-            
+
+            <!-- Label + large room code display -->
+            <div style="font-size:0.9rem; color:#888; text-transform:uppercase;">Room Code:</div>
+            <div id="display-room-code"
+                 style="font-size:4rem; font-weight:900; color:var(--brand); letter-spacing:8px; margin:10px 0; font-family:'Courier New', monospace;">
+                ----
+            </div>
+
+            <!-- QR code block — QRCode.js injects a <canvas> or <img> here.
+                 White background ensures the QR is scannable on any device. -->
+            <div style="margin-bottom: 20px;">
+                <div id="qr-container"
+                     style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+                </div>
+                <div style="font-size: 0.8rem; color: #aaa; margin-top: 10px; text-transform: uppercase; font-weight: bold;">
+                    Scan to Auto-Join
+                </div>
+            </div>
+
+            <!-- Live player list — pills injected by Firebase .on('value') listener
+                 in createRoom() (multiplayer.js). Clears and rebuilds on every change. -->
             <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:15px; min-height:100px; margin-bottom:20px;">
-                <div style="font-size:0.8rem; color:#888; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">Players Connected (<span id="player-count">0</span>)</div>
+                <div style="font-size:0.8rem; color:#888; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">
+                    Players Connected (<span id="player-count">0</span>)
+                </div>
+                <!-- Colour-coded pill per player, added dynamically by JS -->
                 <div id="lobby-player-list" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
                 </div>
             </div>
-            
-            <button class="btn btn-main" id="start-multiplayer-btn" onclick="startMultiplayerGame()" disabled>Start Game</button>
-            <button class="btn btn-reset" onclick="cancelLobby()">Cancel</button>
-        </div>
 
+            <!-- Start button — disabled until at least 1 player joins.
+                 startMultiplayerGame() sets Firebase room state to 'playing',
+                 which triggers all client phones to transition to PHASE 5. -->
+            <button class="btn btn-main"
+                    id="start-multiplayer-btn"
+                    onclick="startMultiplayerGame()"
+                    disabled>
+                Start Game
+            </button>
+
+            <!-- Removes the Firebase room and reloads the page -->
+            <button class="btn btn-reset" onclick="cancelLobby()">Cancel</button>
+
+        </div><!-- /#host-lobby-screen -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ███████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ██╔════╝
+  ██████╔╝███████║███████║███████╗█████╗      ███████╗
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ╚════██║
+  ██║     ██║  ██║██║  ██║███████║███████╗    ███████║
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝    ╚══════╝
+
+  PHASE 5 — CLIENT SCREENS (PHONE CONTROLLER)
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    These two screens are exclusively for the PHONE players who
+    have joined a multiplayer room.  The host NEVER sees them.
+
+    body.client-mode CSS locks down the header so phones cannot
+    accidentally navigate away mid-game.
+
+  ─── SCREEN A: #client-play-screen ───────────────────────────
+    The active "controller" screen during a round.
+    Revealed by joinRoom() when Firebase room state → 'playing'.
+
+    DYNAMIC SECTIONS — switched by JS listeners in multiplayer.js:
+
+      #client-status          — "ROUND N" label, updated via
+                                Firebase  currentRound  listener.
+
+      #client-prompt          — The question / prompt text injected
+                                via Firebase  currentPrompt  listener.
+                                Also used by Consensus cartridge for
+                                the round-type label.
+
+      #client-timer-display   — Hosts a <div class="timer-bar-fill">
+                                injected by the timeLeft listener.
+                                data-time attribute stores raw seconds
+                                for submitClientTextGuess() to read.
+
+      #client-grace-msg       — Hidden by default; revealed when Song
+                                Trivia enters the 30s grace period
+                                after audio ends in multiplayer mode.
+
+      #client-text-inputs     — Typing inputs for Song Trivia mode.
+                                Shown only when cartridge is song_trivia.
+                                Contains artist / song / movie fields.
+
+      #client-mc-inputs       — Multiple-choice button area.
+                                Buttons are injected by renderClientMC()
+                                in multiplayer.js when Firebase
+                                currentMC changes.
+
+      #client-consensus-ui    — Dedicated container for The Consensus
+                                cartridge's dynamic renderClientUI()
+                                output (voting, surveys, etc.).
+
+      #client-locked-screen   — "Answer Locked!" confirmation shown
+                                after any submission. Hides all inputs.
+
+    FLOW:
+      Each round: currentRound fires → clear inputs → show correct
+      input type → player submits → locked-screen appears → wait
+      for next round.
+
+  ─── SCREEN B: #client-end-screen ────────────────────────────
+    Shown when Firebase room state → 'finished'.
+    Displays the player's own final score and the full leaderboard
+    (pulled from Firebase finalLeaderboard node).
+  ============================================================ -->
+
+        <!-- ─── SCREEN A: Phone Active Play Controller ───── -->
         <div id="client-play-screen" class="hidden" style="width: 100%; text-align: center;">
-            <div id="client-status" style="font-size: 1.2rem; font-weight: bold; color: var(--brand); margin-bottom: 20px;">ROUND 1</div>
-    
-            <div id="client-prompt" style="font-size: 2.5rem; font-weight: 900; color: #fff; margin-bottom: 15px;"></div>
-            
-            <div id="client-timer-display" style="font-size: 4rem; color: var(--highlight); font-family: 'Courier New', monospace; font-weight: 900; margin-bottom: 5px;">30</div>
-            <div id="client-grace-msg" class="hidden" style="color:var(--p4); font-size:0.9rem; font-weight:bold; margin-bottom:15px; text-transform: uppercase;">🎵 Audio Ended. 30s Grace Period.</div>
-            <div id="client-text-inputs">
-                <input type="text" id="client-guess-artist" placeholder="Artist Name..." autocomplete="off">
-                <input type="text" id="client-guess-song" placeholder="Song Title..." autocomplete="off">
-                <input type="text" id="client-guess-movie" placeholder="Movie Name..." class="hidden" autocomplete="off">
-                
-                <button class="btn btn-main" style="margin-top: 15px;" onclick="submitClientTextGuess()">SUBMIT GUESS</button>
-                <button class="btn btn-alt" style="margin-top: 10px;" onclick="requestClientLifeline()">MULTIPLE CHOICE</button>
+
+            <!-- Round counter — "ROUND 1", "ROUND 2"… updated by Firebase listener -->
+            <div id="client-status"
+                 style="font-size: 1.2rem; font-weight: bold; color: var(--brand); margin-bottom: 20px;">
+                ROUND 1
             </div>
 
-            <div id="client-mc-inputs" class="hidden">
-                </div>
-            
-            <div id="client-consensus-ui" style="width: 100%; text-align: center; margin-top: 15px;"></div>    
+            <!-- Question / prompt text — injected per-round by currentPrompt listener.
+                 Also used as a heading in Consensus mode. -->
+            <div id="client-prompt"
+                 style="font-size: 2.5rem; font-weight: 900; color: #fff; margin-bottom: 15px;">
+            </div>
+
+            <!-- Timer display — JS replaces content with a .timer-bar-container.
+                 data-time stores raw remaining seconds for score submission. -->
+            <div id="client-timer-display"
+                 style="font-size: 4rem; color: var(--highlight); font-family: 'Courier New', monospace; font-weight: 900; margin-bottom: 5px;">
+                30
+            </div>
+
+            <!-- Grace-period notice — only visible in Song Trivia multiplayer
+                 when audio finishes before all players have answered. -->
+            <div id="client-grace-msg"
+                 class="hidden"
+                 style="color:var(--p4); font-size:0.9rem; font-weight:bold; margin-bottom:15px; text-transform: uppercase;">
+                🎵 Audio Ended. 30s Grace Period.
+            </div>
+
+            <!-- ── SONG TRIVIA TYPING INPUTS ──
+                 Visible only when cartridge is song_trivia.
+                 Managed by multiplayer.js currentRound listener.
+                 Movie field is hidden/shown per game mode. -->
+            <div id="client-text-inputs">
+                <input type="text" id="client-guess-artist" placeholder="Artist Name..."   autocomplete="off">
+                <input type="text" id="client-guess-song"   placeholder="Song Title..."    autocomplete="off">
+                <input type="text" id="client-guess-movie"  placeholder="Movie Name..." class="hidden" autocomplete="off">
+
+                <!-- Submits typed guesses to Firebase players/{myPlayerId}/guess -->
+                <button class="btn btn-main" style="margin-top: 15px;" onclick="submitClientTextGuess()">
+                    SUBMIT GUESS
+                </button>
+
+                <!-- Requests MC options from Firebase roundMC node.
+                     Forces the phone into multiple-choice mode mid-round. -->
+                <button class="btn btn-alt" style="margin-top: 10px;" onclick="requestClientLifeline()">
+                    MULTIPLE CHOICE
+                </button>
+            </div>
+
+            <!-- ── MULTIPLE CHOICE BUTTON AREA ──
+                 Buttons are dynamically built by renderClientMC() in multiplayer.js.
+                 Each button calls submitClientMCGuess(isCorrect) when tapped. -->
+            <div id="client-mc-inputs" class="hidden"></div>
+
+            <!-- ── CONSENSUS DYNAMIC UI AREA ──
+                 For The Consensus cartridge only.
+                 consensusLogic.js renderClientUI() fills this div
+                 with voting buttons, numeric inputs, etc. per round type. -->
+            <div id="client-consensus-ui" style="width: 100%; text-align: center; margin-top: 15px;"></div>
+
+            <!-- ── LOCKED CONFIRMATION ──
+                 Replaces all input sections after any submission.
+                 Cleared at the start of every new round. -->
             <div id="client-locked-screen" class="hidden" style="padding: 30px 10px;">
                 <h2 style="color:var(--success);">Answer Locked!</h2>
                 <p style="font-size: 1.1rem; color: #ccc;">Look at the big screen.</p>
             </div>
-            
-            <button class="btn btn-reset" style="margin-top: 40px; width: auto; padding: 12px 24px;" onclick="location.reload()">Leave Game</button>
-            
-        </div>
-              
-        
-        <div id="client-end-screen" class="hidden" style="width: 100%; text-align: center; padding: 40px 10px;">
+
+            <!-- Emergency escape — hard-reloads the page, disconnecting the player.
+                 Firebase onDisconnect() handler will auto-remove the player node. -->
+            <button class="btn btn-reset"
+                    style="margin-top: 40px; width: auto; padding: 12px 24px;"
+                    onclick="location.reload()">
+                Leave Game
+            </button>
+
+        </div><!-- /#client-play-screen -->
+
+
+        <!-- ─── SCREEN B: Phone End Screen ───────────────── -->
+        <!--
+          Shown when Firebase room state transitions to 'finished'.
+          joinRoom() in multiplayer.js listens for this change and
+          reveals this screen while hiding #client-play-screen.
+
+          #client-final-score  — Updated by Firebase listener watching
+                                 players/{myPlayerId}/finalScore node.
+          #client-leaderboard-container — Built from Firebase
+                                 finalLeaderboard array (sorted by score).
+        -->
+        <div id="client-end-screen" class="hidden"
+             style="width: 100%; text-align: center; padding: 40px 10px;">
+
             <h2 style="color:var(--brand); font-size: 2.5rem; margin-bottom: 5px;">Game Over!</h2>
-            
+
+            <!-- Personal score card -->
             <div style="background: var(--surface); border: 2px solid var(--border); padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <div style="font-size: 0.9rem; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Your Final Score</div>
-                <div id="client-final-score" style="font-size: 4.5rem; font-weight: 900; color: var(--highlight); font-family: 'Courier New', monospace; margin-top: 5px;">0</div>
+                <div style="font-size: 0.9rem; color: #888; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+                    Your Final Score
+                </div>
+                <!-- Score injected by Firebase listener in joinRoom() -->
+                <div id="client-final-score"
+                     style="font-size: 4.5rem; font-weight: 900; color: var(--highlight); font-family: 'Courier New', monospace; margin-top: 5px;">
+                    0
+                </div>
             </div>
 
+            <!-- Full leaderboard injected from Firebase finalLeaderboard node -->
             <div id="client-leaderboard-container" style="margin-bottom: 30px;"></div>
 
+            <!-- Returns to main menu (full page reload) -->
             <button class="btn btn-main" onclick="location.reload()">Return to Main Menu</button>
-        </div>
 
-       <div id="main-menu-screen">
+        </div><!-- /#client-end-screen -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗     ██████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ██╔════╝
+  ██████╔╝███████║███████║███████╗█████╗      ███████╗
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ██╔═══██╗
+  ██║     ██║  ██║██║  ██║███████║███████╗    ╚██████╔╝
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝
+
+  PHASE 6 — MAIN MENU (CARTRIDGE SELECTION)
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    The landing screen the player sees on first load.
+    Presents all available game cartridges as tappable cards.
+
+  HOW IT WORKS:
+    · Each card calls selectGame('cartridge_id') (app.js).
+    · selectGame() calls loadCartridge() to set window.activeCartridge,
+      then calls buildSetupScreen(manifest) (ui.js) which dynamically
+      populates the PHASE 7 setup screen with that game's modes,
+      sub-options, and difficulty levels.
+    · This screen is then hidden and #setup-screen is shown.
+
+  ADDING A NEW GAME:
+    1. Create your cartridge JS file with a `manifest` export.
+    2. Register it in app.js loadCartridge() switch statement.
+    3. Copy any one of the .select-card.game-card divs below,
+       change the emoji, title, description, and onclick gameId.
+    4. Done — the setup screen and play screen reuse themselves.
+
+  CURRENT CARTRIDGES:
+    song_trivia  — Audio-based guess-the-artist/song/movie
+    consensus    — Social voting & prediction party game
+    who_said_it  — Identify pop-culture quotes
+    fast_math    — Speed arithmetic multiple-choice
+  ============================================================ -->
+
+        <!-- ─── MAIN MENU SCREEN ─────────────────────────── -->
+        <div id="main-menu-screen">
+
             <h2 style="color:var(--brand); margin-bottom: 20px; font-size: 1.8rem;">Select a Game</h2>
+
+            <!-- Card grid — each card is one "cartridge" slot.
+                 Add new cards here as new games are built. -->
             <div class="card-group">
-                <div class="select-card game-card" onclick="selectGame('song_trivia')" style="text-align: center; padding: 18px; margin-bottom: 12px;">
+
+                <!-- 🎵 Song Trivia — the flagship game -->
+                <div class="select-card game-card"
+                     onclick="selectGame('song_trivia')"
+                     style="text-align: center; padding: 18px; margin-bottom: 12px;">
                     <div style="font-size: 2.5rem; margin-bottom: 8px;">🎵</div>
                     <div class="card-title" style="font-size: 1.25rem;">Song Trivia</div>
-                    <div class="card-desc" style="font-size: 0.9rem;">The original Yardbird masterpiece. Guess the artist, song, or movie.</div>
+                    <div class="card-desc" style="font-size: 0.9rem;">
+                        The original Yardbird masterpiece. Guess the artist, song, or movie.
+                    </div>
                 </div>
-                <div class="select-card game-card" onclick="selectGame('consensus')" style="text-align: center; padding: 18px; margin-bottom: 12px;">
+
+                <!-- 🗳️ The Consensus — social party game -->
+                <div class="select-card game-card"
+                     onclick="selectGame('consensus')"
+                     style="text-align: center; padding: 18px; margin-bottom: 12px;">
                     <div style="font-size: 2.5rem; margin-bottom: 8px;">🗳️</div>
                     <div class="card-title" style="font-size: 1.25rem;">The Consensus</div>
-                    <div class="card-desc" style="font-size: 0.9rem;">A social party game of voting, debating, and guessing the room.</div>
+                    <div class="card-desc" style="font-size: 0.9rem;">
+                        A social party game of voting, debating, and guessing the room.
+                    </div>
                 </div>
-                <div class="select-card game-card" onclick="selectGame('who_said_it')" style="text-align: center; padding: 18px;">
+
+                <!-- 🗣️ Who Said It? — quote identification -->
+                <div class="select-card game-card"
+                     onclick="selectGame('who_said_it')"
+                     style="text-align: center; padding: 18px;">
                     <div style="font-size: 2.5rem; margin-bottom: 8px;">🗣️</div>
                     <div class="card-title" style="font-size: 1.25rem;">Who Said It?</div>
-                    <div class="card-desc" style="font-size: 0.9rem;">Pop culture, iconic quotes, and famous movie lines.</div>
+                    <div class="card-desc" style="font-size: 0.9rem;">
+                        Pop culture, iconic quotes, and famous movie lines.
+                    </div>
                 </div>
-                <div class="select-card game-card" onclick="selectGame('fast_math')" style="text-align: center; padding: 18px;">
+
+                <!-- ➕ Fast Math — speed arithmetic -->
+                <div class="select-card game-card"
+                     onclick="selectGame('fast_math')"
+                     style="text-align: center; padding: 18px;">
                     <div style="font-size: 2.5rem; margin-bottom: 8px;">➕</div>
                     <div class="card-title" style="font-size: 1.25rem;">Fast Math</div>
-                    <div class="card-desc" style="font-size: 0.9rem;">Quick-fire arithmetic battles. Speed is everything!</div>
+                    <div class="card-desc" style="font-size: 0.9rem;">
+                        Quick-fire arithmetic battles. Speed is everything!
+                    </div>
                 </div>
+
+                <!--
+                  ┌─────────────────────────────────────────────┐
+                  │  FUTURE CARTRIDGE SLOT                      │
+                  │  Copy the block above, set onclick gameId,  │
+                  │  pick an emoji, write a one-line desc.       │
+                  └─────────────────────────────────────────────┘
+                -->
+
             </div>
-        </div>
-        
+        </div><!-- /#main-menu-screen -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗    ███████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ╚════██╗
+  ██████╔╝███████║███████║███████╗█████╗           ███╗
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ██   ██║
+  ██║     ██║  ██║██║  ██║███████║███████╗    ╚██████╔╝
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝     ╚═════╝
+
+  PHASE 7 — HOST / SOLO SCREENS (Setup · Play · Finale)
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    Three sequential screens for the primary game loop:
+      Setup  →  Play  →  Finale
+
+    These screens are SHARED by ALL cartridges.
+    Each cartridge's manifest tells buildSetupScreen() (ui.js)
+    what modes, sub-options, and difficulty cards to inject into
+    the empty slot divs here (#mode-group, #level-group, etc.).
+
+  ─── SCREEN A: #setup-screen ─────────────────────────────────
+    LAYOUT (top → bottom):
+      1. Daily Challenge button  (Song Trivia only; hidden for others)
+      2. separator
+      3. "Play Custom Game" / "Create Multiplayer Room" button
+      4. Mode selector  (#mode-group)       — filled by buildSetupScreen()
+      5. Sub-option selector (#sub-pills)   — filled by setMode() / renderSubPills()
+      6. Custom text input (#custom-input)  — shown only for 'custom' sub-option
+                                              or AI Infinite mode
+      7. Rounds selector  (#rounds-group)   — always shown; 5/10/15/20 pills
+      8. Difficulty selector (#level-group) — filled by buildSetupScreen()
+      9. Status / loading feedback (#feedback-setup)
+     10. Back to Main Menu button
+
+  ─── SCREEN B: #play-screen ──────────────────────────────────
+    THE GAME CANVAS — shared by all cartridges in both solo and
+    host-multiplayer mode.
+
+    KEY ELEMENTS:
+      #score-board    — Row of .score-pill elements, one per player.
+                        Rebuilt after every round with updated scores.
+      #active-player  — Shows round number, player tag, or
+                        "2X BONUS" label for double-point rounds.
+      #visualizer     — Three animated bars that bounce while audio
+                        plays (Song Trivia). .active/.paused states
+                        controlled by JS.
+      #timer          — Contains the .timer-bar-fill injected by JS
+                        each round. Starts full, drains to zero.
+      #feedback       — Round result text / answer reveals / score
+                        deltas. Rebuilt by evaluateGuess() /
+                        evaluateMultiplayerRound() in each cartridge.
+      #reveal-art     — Album art image revealed after each Song
+                        Trivia guess. Hidden for other cartridges.
+      #btn-container  — "STOP & GUESS" + "MULTIPLE CHOICE" buttons.
+                        Hidden for MC-only cartridges (Math, Quotes).
+      #guess-fields   — Text inputs shown after STOP is pressed in
+                        Song Trivia.  Hidden for MC-only games.
+      #mc-fields      — Multiple choice button container.
+                        Buttons injected by setupMC() / nextRound()
+                        in each cartridge JS file.
+
+  ─── SCREEN C: #final-screen ─────────────────────────────────
+    Displayed after the last round completes (endGameSequence()
+    in each cartridge JS).
+
+    KEY ELEMENTS:
+      #winner-text         — Score card or podium HTML injected by JS.
+                             Solo: gradient score card with hype text.
+                             Multiplayer: ordered leaderboard.
+      #new-record-msg      — Hidden by default; revealed if the score
+                             beats localStorage yardbirdHighScore.
+      #final-grid          — Emoji result grid (🟩🟨🟥) for Song Trivia.
+                             Hidden for other cartridges.
+      shareChallenge()     — Platform-aware share: uses navigator.share
+                             on mobile, copies to clipboard on desktop.
+      .playlist-box        — Lets players open the round's songs in
+                             Apple Music, Spotify, or YouTube.
+                             Hidden for non-audio cartridges.
+  ============================================================ -->
+
+        <!-- ─── SCREEN A: Setup / Config ──────────────────── -->
         <div id="setup-screen" class="hidden">
+
+            <!-- ── DAILY CHALLENGE BUTTON ──
+                 Only visible for Song Trivia (hasDaily: true).
+                 buildSetupScreen() in ui.js hides this container
+                 for cartridges with hasDaily: false.
+                 setupDailyButton() in ui.js greyes it out if
+                 the player has already played today. -->
             <div>
-                <button class="btn btn-daily" id="daily-btn-top" onclick="startDailyChallenge()">🌍 PLAY TODAY THREE</button>
-                <div style="font-size:0.75rem; color:#aaa; text-transform:uppercase; margin-top:5px; font-weight: bold;">The Daily Global Synced Challenge</div>
+                <button class="btn btn-daily"
+                        id="daily-btn-top"
+                        onclick="startDailyChallenge()">
+                    🌍 PLAY TODAY THREE
+                </button>
+                <div style="font-size:0.75rem; color:#aaa; text-transform:uppercase; margin-top:5px; font-weight: bold;">
+                    The Daily Global Synced Challenge
+                </div>
             </div>
 
             <hr class="separator-line">
-            
-            <button class="btn btn-main" id="start-btn-top" style="margin-bottom: 10px;" onclick="startGame()">▶ PLAY CUSTOM GAME</button>
 
+            <!-- Primary action button.
+                 In solo mode:       "▶ PLAY CUSTOM GAME"  → startGame()
+                 In multiplayer mode: "🚀 CREATE MULTIPLAYER ROOM" → createRoom()
+                 Text and onclick are swapped by handleHostSetup() in multiplayer.js -->
+            <button class="btn btn-main"
+                    id="start-btn-top"
+                    style="margin-bottom: 10px;"
+                    onclick="startGame()">
+                ▶ PLAY CUSTOM GAME
+            </button>
+
+            <!-- ── MODE SELECTOR ──
+                 Empty on load; populated by buildSetupScreen(manifest) in ui.js.
+                 Clicking a card calls setMode(mode.id, card) which also
+                 triggers sub-pill and difficulty updates. -->
             <label class="section-label">1. Select Game Mode</label>
             <div class="card-group" id="mode-group"></div>
 
+            <!-- ── SUB-OPTION SELECTOR ──
+                 Shown for Song Trivia (genre/artist/movie subs) and
+                 Who Said It (Party Pack / Infinite AI).
+                 Hidden for Fast Math and Consensus which handle subs
+                 differently via their mode cards. -->
             <div id="sub-selection-area">
                 <label class="section-label" id="sub-label">Select Era / Genre</label>
+                <!-- Pills built by renderSubPills() in ui.js -->
                 <div class="pill-group" id="sub-pills"></div>
             </div>
-            <input type="text" id="custom-input" class="hidden" placeholder="Separate multiple entries with a comma">
 
+            <!-- ── CUSTOM TEXT / API KEY INPUT ──
+                 Hidden by default.
+                 Shown when:
+                   · Sub-option = 'custom' (free-text genre / Apple Music URL)
+                   · Sub-option = 'ai_infinite' in Who Said It / Consensus
+                     (reveals a password field for the OpenAI API key)
+                 setSub() in ui.js controls visibility. -->
+            <input type="text"
+                   id="custom-input"
+                   class="hidden"
+                   placeholder="Separate multiple entries with a comma">
+
+            <!-- ── ROUNDS SELECTOR ──
+                 Always visible. setPill() in ui.js updates state.gameState.rounds.
+                 Default active pill = 10 rounds. -->
             <div id="players-rounds-area" style="display: flex; gap: 15px; margin-top: 5px;">
                 <div style="flex:1;">
                     <label class="section-label">Rounds</label>
                     <div class="pill-grid" id="rounds-group">
-                        <div class="pill" onclick="setPill('rounds-group', this, 5)">5</div>
+                        <div class="pill"        onclick="setPill('rounds-group', this, 5)">5</div>
                         <div class="pill active" onclick="setPill('rounds-group', this, 10)">10</div>
-                        <div class="pill" onclick="setPill('rounds-group', this, 15)">15</div>
-                        <div class="pill" onclick="setPill('rounds-group', this, 20)">20</div>
+                        <div class="pill"        onclick="setPill('rounds-group', this, 15)">15</div>
+                        <div class="pill"        onclick="setPill('rounds-group', this, 20)">20</div>
                     </div>
                 </div>
             </div>
 
+            <!-- ── DIFFICULTY SELECTOR ──
+                 Empty on load; populated by buildSetupScreen().
+                 Cards call setLevel(level.id, card) on click.
+                 Locked to 'medium' in Song Trivia Movie mode
+                 (iTunes soundtrack DB doesn't support Easy hit-limits well). -->
             <label class="section-label" id="level-label-text">2. Select Difficulty</label>
             <div class="card-group" id="level-group" style="margin-bottom: 20px;"></div>
-            
-            <div id="feedback-setup" style="margin-top:15px; color:var(--brand); font-weight:bold;"></div>
-            <button class="btn btn-reset" id="back-to-main-btn" onclick="location.reload()" style="margin-top: 20px; width: 100%;">BACK TO MAIN MENU</button>
-        </div>
 
+            <!-- Loading / error status — shown while fetching tracks / AI prompts.
+                 e.g. "Connecting to iTunes Database..." or "❌ Network Error" -->
+            <div id="feedback-setup" style="margin-top:15px; color:var(--brand); font-weight:bold;"></div>
+
+            <!-- Hard reload — returns to main menu cleanly -->
+            <button class="btn btn-reset"
+                    id="back-to-main-btn"
+                    onclick="location.reload()"
+                    style="margin-top: 20px; width: 100%;">
+                BACK TO MAIN MENU
+            </button>
+
+        </div><!-- /#setup-screen -->
+
+
+        <!-- ─── SCREEN B: Active Play / Game Canvas ───────── -->
         <div id="play-screen" class="hidden">
+
+            <!-- ── SCOREBOARD ──
+                 One .score-pill per player, coloured with colors[i].
+                 Rebuilt by updateLeaderboard() after every guess.
+                 In host-multiplayer mode the host's own board is
+                 cleared to show the room lock-in counter instead. -->
             <div id="score-board" class="score-bar"></div>
-            
+
+            <!-- ── ROUND / PLAYER TAG ──
+                 Shows:  "Player N Turn (Round X/Y)"  in solo/local MP
+                         "ROUND X / Y" in host mode
+                         "Today's Song X/3" in daily mode
+                 Colour changes to #f39c12 on double-point rounds. -->
             <div id="active-player" class="player-tag">Player 1 Turn</div>
-            
+
+            <!-- ── AUDIO VISUALIZER ──
+                 Three bouncing CSS bars that animate while audio plays.
+                 Classes:  .hidden → .active (playing) → .paused (stopped)
+                 Bar colour tracks --active-vis CSS var which matches
+                 the active player's colour. -->
             <div id="visualizer" class="visualizer hidden">
                 <div class="vis-bar"></div>
                 <div class="vis-bar"></div>
                 <div class="vis-bar"></div>
             </div>
+
+            <!-- ── TIMER ──
+                 JS injects:
+                   <div class="timer-bar-container">
+                     <div id="timer-bar-fill" class="timer-bar-fill"></div>
+                   </div>
+                 The fill div shrinks via CSS transition: width 1s linear.
+                 Turns red (--fail) when ≤ 3 seconds remain.
+                 "Load..." text is the pre-injection placeholder only. -->
             <div id="timer" class="timer-display">Load...</div>
-            
+
+            <!-- ── ROUND FEEDBACK ──
+                 Cleared each round; updated by evaluateGuess() with:
+                   · ✅/❌ result headline
+                   · Points awarded
+                   · Correct artist / song / movie reveal
+                   · "Next round loading…" countdown message
+                 In host mode: shows "LOCKED IN: N/M" counter instead. -->
             <div id="feedback"></div>
+
+            <!-- ── ALBUM ART REVEAL ──
+                 Fades in after each Song Trivia guess.
+                 Upscaled from 100×100 to 400×400 for quality.
+                 display:none by default; set to 'block' by JS. -->
             <img id="reveal-art" class="cover-art" src="" alt="Album Art">
-            
+
+            <!-- ── PRIMARY ACTION BUTTONS ──
+                 Shown during the "listening" phase in Song Trivia.
+                 Hidden for MC-only cartridges (Math, Quotes, Consensus).
+
+                 STOP & GUESS   → handleStop()  pauses audio, shows
+                                  #guess-fields, starts 20s typing timer.
+                 MULTIPLE CHOICE → forceLifeline() immediately jumps to
+                                   MC mode (skips typing). Costs no points
+                                   but halves the max time bonus. -->
             <div style="display:flex; gap:10px; margin-bottom:10px; width:100%;" id="btn-container">
-                <button id="stop-btn" class="btn btn-main" style="flex:2;" onclick="handleStop()">STOP & GUESS</button>
-                <button id="force-mc-btn" class="btn btn-alt" style="flex:1; margin-bottom:0;" onclick="forceLifeline()">MULTIPLE CHOICE</button>
-            </div>
-            
-            <div id="guess-fields" class="hidden">
-                <input type="text" id="guess-artist" placeholder="Artist Name..." autocomplete="off">
-                <input type="text" id="guess-song" placeholder="Song Title..." autocomplete="off">
-                <input type="text" id="guess-movie" placeholder="Movie Name..." class="hidden" autocomplete="off">
-                <button class="btn btn-main" id="submit-btn" style="margin-top:0;" onclick="evaluateGuess()">Submit Answers</button>
+                <button id="stop-btn"
+                        class="btn btn-main"
+                        style="flex:2;"
+                        onclick="handleStop()">
+                    STOP &amp; GUESS
+                </button>
+                <button id="force-mc-btn"
+                        class="btn btn-alt"
+                        style="flex:1; margin-bottom:0;"
+                        onclick="forceLifeline()">
+                    MULTIPLE CHOICE
+                </button>
             </div>
 
+            <!-- ── TYPING ANSWER FIELDS ──
+                 Revealed by handleStop() after STOP button is pressed.
+                 Only the relevant field is shown per game mode:
+                   genre  → artist + song fields
+                   artist → song field only
+                   movie  → movie field only
+                 evaluateGuess() uses isCloseEnough() (Levenshtein fuzzy
+                 match) to score typed answers against the real values.
+                 Enter key submits via DOMContentLoaded listener in app.js. -->
+            <div id="guess-fields" class="hidden">
+                <input type="text" id="guess-artist" placeholder="Artist Name..."  autocomplete="off">
+                <input type="text" id="guess-song"   placeholder="Song Title..."   autocomplete="off">
+                <input type="text" id="guess-movie"  placeholder="Movie Name..." class="hidden" autocomplete="off">
+
+                <!-- Calls evaluateGuess() in the active cartridge module -->
+                <button class="btn btn-main" id="submit-btn" style="margin-top:0;" onclick="evaluateGuess()">
+                    Submit Answers
+                </button>
+            </div>
+
+            <!-- ── MULTIPLE CHOICE BUTTON AREA ──
+                 Buttons injected by setupMC() (Song Trivia) or
+                 directly by nextRound() in Math/Quotes/Consensus.
+                 Each button passes opt.isCorrect to evaluateGuess(). -->
             <div id="mc-fields" class="hidden"></div>
 
+            <!-- Ends the game for everyone in multiplayer (after confirm dialog),
+                 or just exits solo mode. Calls cancelActiveGame() (multiplayer.js). -->
             <button class="btn btn-reset" onclick="cancelActiveGame()">End Game / Leave Room</button>
-        </div>
 
+        </div><!-- /#play-screen -->
+
+
+        <!-- ─── SCREEN C: Final Results / Finale ──────────── -->
         <div id="final-screen" class="hidden">
-            <h2 id="congrats-text" style="font-size:1.6rem; color:#fff; margin-bottom: 5px;">Game Finished!</h2>
-            <div id="final-subtitle" style="color:var(--brand); font-size:0.8rem; font-weight:bold; margin-bottom:15px; text-transform:uppercase;"></div>
-            
+
+            <!-- Headline — static; cartridges customise via winner-text instead -->
+            <h2 id="congrats-text" style="font-size:1.6rem; color:#fff; margin-bottom: 5px;">
+                Game Finished!
+            </h2>
+
+            <!-- Subtitle caption (e.g. "Scores Normalized to 1000")
+                 Set by endGameSequence() in each cartridge JS -->
+            <div id="final-subtitle"
+                 style="color:var(--brand); font-size:0.8rem; font-weight:bold; margin-bottom:15px; text-transform:uppercase;">
+            </div>
+
+            <!-- WINNER / SCORE CONTENT:
+                 Solo:        Gradient score card HTML injected by JS.
+                 Multiplayer: Podium leaderboard with medal emojis.
+                 Set by endGameSequence() in the active cartridge. -->
             <p id="winner-text" style="font-size: 1.25rem; font-weight: 900; margin-bottom: 10px;"></p>
-            <div id="new-record-msg" style="color:var(--p1); font-weight:bold; margin-bottom:10px; display:none;">🎉 NEW ALL-TIME RECORD! 🎉</div>
-            
+
+            <!-- Only visible if the score beats the stored yardbirdHighScore.
+                 Checked in gameLogic.js endGameSequence(). -->
+            <div id="new-record-msg"
+                 style="color:var(--p1); font-weight:bold; margin-bottom:10px; display:none;">
+                🎉 NEW ALL-TIME RECORD! 🎉
+            </div>
+
+            <!-- Emoji result grid — Song Trivia only.
+                 🟩 = correct without lifeline
+                 🟨 = correct with lifeline (MC)
+                 🟥 = wrong
+                 Hidden / emptied for other cartridges. -->
             <div id="final-grid" style="margin-bottom: 20px;"></div>
 
-            <button class="btn btn-main" style="margin-bottom:20px;" onclick="shareChallenge()">⚔️ CHALLENGE A FRIEND</button>
-            
+            <!-- Calls shareChallenge() in the active cartridge.
+                 Uses navigator.share on mobile; clipboard fallback on desktop.
+                 Song Trivia encodes the exact track IDs in the URL so
+                 the challenger plays the same songs. -->
+            <button class="btn btn-main" style="margin-bottom:20px;" onclick="shareChallenge()">
+                ⚔️ CHALLENGE A FRIEND
+            </button>
+
+            <!-- ── PLAYLIST EXPORT BOX ──
+                 Opens all played tracks in the chosen streaming platform.
+                 Hidden by JS for non-audio cartridges (Math, Quotes, Consensus).
+                 renderPlaylist(platform) in ui.js builds the track links. -->
             <div class="playlist-box">
                 <h4>Open Playlist In:</h4>
                 <div class="platform-toggles">
-                    <button id="plat-apple" class="plat-btn" onclick="renderPlaylist('apple')">Apple Music</button>
+                    <button id="plat-apple"   class="plat-btn" onclick="renderPlaylist('apple')">Apple Music</button>
                     <button id="plat-spotify" class="plat-btn" onclick="renderPlaylist('spotify')">Spotify</button>
                     <button id="plat-youtube" class="plat-btn" onclick="renderPlaylist('youtube')">YouTube</button>
                 </div>
+                <!-- Track links injected here by renderPlaylist(); hidden until a button is tapped -->
                 <div class="playlist-list-container" id="playlist-list-container">
                     <ul id="playlist-list" class="playlist-list"></ul>
                 </div>
             </div>
 
-            <button class="btn btn-main" style="margin-top:20px;" onclick="location.reload()">Play Again</button>
-        </div>
-    </div>
-</div>
+            <!-- Hard reload — fastest path back to the main menu -->
+            <button class="btn btn-main" style="margin-top:20px;" onclick="location.reload()">
+                Play Again
+            </button>
 
-   
+        </div><!-- /#final-screen -->
+
+
+    </div><!-- /.container -->
+</div><!-- /.game-wrapper -->
+
+
+<!-- ============================================================
+  ██████╗ ██╗  ██╗ █████╗ ███████╗███████╗     █████╗
+  ██╔══██╗██║  ██║██╔══██╗██╔════╝██╔════╝    ██╔══██╗
+  ██████╔╝███████║███████║███████╗█████╗       ╚█████╔╝
+  ██╔═══╝ ██╔══██║██╔══██║╚════██║██╔══╝      ██╔══██╗
+  ██║     ██║  ██║██║  ██║███████║███████╗    ╚█████╔╝
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝     ╚════╝
+
+  PHASE 8 — BOOT SCRIPTS
+  ─────────────────────────────────────────────────────
+  PURPOSE:
+    Scripts that must run AFTER the DOM is painted.
+    Placed at the bottom of <body> for standard deferred execution.
+
+  SCRIPT A — app.js (ES Module, type="module")
+    The main application bootstrap.  Runs AFTER all DOM elements
+    above exist.  Responsibilities:
+      · Imports all cartridge modules (gameLogic, mathLogic, etc.)
+      · Sets window.activeCartridge = SongTrivia (default)
+      · Attaches ALL game functions to window.* so inline onclick
+        handlers on buttons can reach them
+      · window.onload → sets the home screen title, checks daily
+        play status, and handles the ?room= auto-join URL param
+      · DOMContentLoaded → wires Enter-key submission for all
+        text input fields
+
+    WHY type="module"?
+      · Enables ES6 import/export between files.
+      · Runs in strict mode automatically.
+      · Deferred by default — fires after HTML is parsed.
+
+  SCRIPT B — Inline: playCartridgeAnimation(element, gameId)
+    A tactile UX helper for the game-card click feel.
+    Adds class 'cartridge-loading' to press the card down visually,
+    waits 350ms for the animation to complete, then calls
+    window.selectGame(gameId) to actually load the game.
+
+    USAGE (in PHASE 6 cards):
+      onclick="playCartridgeAnimation(this, 'song_trivia')"
+
+    WHY inline (not in app.js)?
+      · It references 'this' (the clicked element) which is easiest
+        to pass directly from an inline handler.
+      · It's intentionally tiny — just animation glue, no game logic.
+      · Currently the cards use onclick="selectGame()" directly;
+        swap to playCartridgeAnimation() for the tactile effect.
+  ============================================================ -->
+
+<!-- SCRIPT A: Main ES Module bundle — imports all cartridges and wires the app -->
 <script type="module" src="app.js"></script>
 
+<!-- SCRIPT B: Inline tactile cartridge press animation utility -->
 <script>
+    /**
+     * playCartridgeAnimation(element, gameId)
+     * ─────────────────────────────────────────
+     * Gives a physical "press down" feel to game card taps before
+     * the game actually loads.  Mimics inserting a game cartridge.
+     *
+     * @param {HTMLElement} element  - The card div that was clicked.
+     *                                 Receives the 'cartridge-loading'
+     *                                 CSS class during the animation.
+     * @param {string}      gameId  - The cartridge ID string passed to
+     *                                 window.selectGame() after the delay.
+     *                                 Must match a case in app.js loadCartridge().
+     *
+     * HOW TO USE ON A CARD:
+     *   Replace:  onclick="selectGame('fast_math')"
+     *   With:     onclick="playCartridgeAnimation(this, 'fast_math')"
+     *
+     * CSS REQUIREMENT:
+     *   .cartridge-loading should scale/darken the card slightly.
+     *   Add to style.css:
+     *     .cartridge-loading { transform: scale(0.97); opacity: 0.8; }
+     */
     function playCartridgeAnimation(element, gameId) {
-        // Lock the card in the "pressed down" state
+        // Step 1: Visually "press" the card into the board
         element.classList.add('cartridge-loading');
-        
-        // Wait 350 milliseconds so the user feels the physical click, then load the game
+
+        // Step 2: After 350ms the animation completes; load the actual game
         setTimeout(() => {
             element.classList.remove('cartridge-loading');
-            
-            // NOTE: Change 'selectGame' to whatever your actual loading function is called!
-            if(window.selectGame) window.selectGame(gameId); 
+
+            // Guard: selectGame is defined in app.js and attached to window.
+            // If JS hasn't booted yet (unlikely but safe), silently skip.
+            if (window.selectGame) window.selectGame(gameId);
         }, 350);
     }
-</script> 
-    
+</script>
+
 </body>
 </html>
