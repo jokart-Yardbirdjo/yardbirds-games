@@ -1,15 +1,96 @@
-// ui.js
-import { state, subOptions } from './state.js';
+/**
+ * ==============================================================================
+ * YARDBIRD'S GAMES - THE VIEW CONTROLLER (ui.js)
+ * ==============================================================================
+ * Role: Manages all DOM manipulation and screen state.
+ * Responsibilities:
+ * 1. Dynamically build the Setup Screen by reading a Cartridge's "manifest".
+ * 2. Handle Asymmetric UI (hiding nav menus when a phone is a "Client Controller").
+ * 3. Act as a "Bridge" for clicks: Update the visual state (active pills), 
+ * then fire the corresponding hook inside the active Cartridge.
+ * ==============================================================================
+ */
 
+import { state } from './state.js';
+
+// ==========================================
+// PHASE 1: MODAL MANAGEMENT
+// ==========================================
+
+/**
+ * Toggles for the Settings, Rules, and Stats overlay modals.
+ */
 export function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
 export function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+
+// ==========================================
+// PHASE 2: THE SETUP ENGINE (MANIFEST READER)
+// ==========================================
+
+/**
+ * Dynamically constructs the setup lobby based on the plugged-in Cartridge's manifest.
+ * @param {Object} manifest - The configuration object exported by the active game.
+ */
+export function buildSetupScreen(manifest) {
+    document.getElementById('main-title').innerText = manifest.title;
+    
+    // Build Mode Selection Cards
+    const modeGroup = document.getElementById('mode-group');
+    modeGroup.innerHTML = ''; 
+    manifest.modes.forEach((mode, index) => {
+        const card = document.createElement('div');
+        card.className = `select-card ${index === 0 ? 'active' : ''}`;
+        card.onclick = () => window.setMode(mode.id, card); 
+        card.innerHTML = `<div class="card-title">${mode.title}</div><div class="card-desc">${mode.desc}</div>`;
+        modeGroup.appendChild(card);
+    });
+
+    // Build Difficulty Level Cards
+    const levelGroup = document.getElementById('level-group');
+    levelGroup.innerHTML = '';
+    manifest.levels.forEach((lvl, index) => {
+        const card = document.createElement('div');
+        card.id = `lvl-${lvl.id}`; 
+        card.className = `select-card ${index === 0 ? 'active' : ''}`;
+        card.onclick = () => window.setLevel(lvl.id, card);
+        card.innerHTML = `<div class="card-title">${lvl.title}</div><div class="card-desc">${lvl.desc}</div>`;
+        levelGroup.appendChild(card);
+    });
+
+    // Reset visibility for standard setup areas
+    document.getElementById('sub-selection-area').classList.add('hidden');
+    document.getElementById('players-rounds-area').classList.remove('hidden');
+
+    // Toggle the Daily Challenge button if the Cartridge supports it
+    const dailyContainer = document.getElementById('daily-btn-top').parentElement;
+    if (dailyContainer) dailyContainer.classList.toggle('hidden', !manifest.hasDaily);
+
+    // Initializer: Force the UI to draw the sub-menu immediately on load
+    if (modeGroup.firstChild) {
+        window.setMode(manifest.modes[0].id, modeGroup.firstChild);
+    } else {
+        state.gameState.mode = manifest.modes[0].id;
+    }
+    state.gameState.level = manifest.levels[0].id;
+}
+
+
+// ==========================================
+// PHASE 3: DELEGATION STATE SETTERS
+// ==========================================
+// When a user clicks a setup option, the UI updates visually, records the 
+// state globally, and then explicitly asks the Cartridge if it needs to react.
+
 export function setMode(mode, element) {
+    // 1. Visual UI Update
     document.querySelectorAll('#mode-group .select-card').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
+    
+    // 2. Global State Update
     state.gameState.mode = mode;
 
-    // Delegate to the Cartridge!
+    // 3. Cartridge Delegation Hook (e.g., Song Trivia uses this to show the "Decades" sub-menu)
     if (window.activeCartridge && typeof window.activeCartridge.onModeSelect === 'function') {
         window.activeCartridge.onModeSelect(mode);
     }
@@ -20,10 +101,15 @@ export function setSub(val, element) {
     element.classList.add('active');
     state.gameState.sub = val;
 
-    // Delegate to the Cartridge!
     if (window.activeCartridge && typeof window.activeCartridge.onSubSelect === 'function') {
         window.activeCartridge.onSubSelect(val);
     }
+}
+
+export function setLevel(level, element) {
+    document.querySelectorAll('#level-group .select-card').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    state.gameState.level = level;
 }
 
 export function setPill(groupId, element, val) {
@@ -33,17 +119,20 @@ export function setPill(groupId, element, val) {
     if(groupId === 'rounds-group') state.gameState.rounds = val;
 }
 
-export function setLevel(level, element) {
-    document.querySelectorAll('#level-group .select-card').forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
-    state.gameState.level = level;
-}
 
+// ==========================================
+// PHASE 4: THE STATS & DAILY BRIDGE
+// ==========================================
+
+/**
+ * Configures the "Today Three" daily button.
+ * Relies on the active cartridge to dictate whether the user has played today.
+ */
 export function setupDailyButton() {
     const dailyBtn = document.getElementById('daily-btn-top');
     if(!dailyBtn) return;
     
-    // 👇 The clean delegation: Ask the cartridge directly!
+    // Ask the cartridge directly if daily is exhausted
     const isPlayed = (window.activeCartridge && typeof window.activeCartridge.hasPlayedDaily === 'function') 
         ? window.activeCartridge.hasPlayedDaily() 
         : false;
@@ -68,61 +157,10 @@ export function setupDailyButton() {
     }
 }
 
-export function renderPlaylist(platform) {
-    document.getElementById('playlist-list-container').style.display = 'block';
-    document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active-plat'));
-    document.getElementById(`plat-${platform}`).classList.add('active-plat');
-
-    let playlistHTML = '';
-    state.songs.forEach((s, i) => {
-        const query = encodeURIComponent(`${s.artistName} ${s.trackName}`);
-        let url = platform === 'apple' ? s.trackViewUrl : (platform === 'spotify' ? `http://googleusercontent.com/spotify.com/8{query}` : `https://music.youtube.com/search?q=${query}`);
-        playlistHTML += `<li><a href="${url}" target="_blank">🎵 ${i + 1}. ${s.artistName} - ${s.trackName}</a></li>`;
-    });
-    document.getElementById('playlist-list').innerHTML = playlistHTML;
-}
-
-export function buildSetupScreen(manifest) {
-    document.getElementById('main-title').innerText = manifest.title;
-    
-    const modeGroup = document.getElementById('mode-group');
-    modeGroup.innerHTML = ''; 
-    manifest.modes.forEach((mode, index) => {
-        const card = document.createElement('div');
-        card.className = `select-card ${index === 0 ? 'active' : ''}`;
-        card.onclick = () => window.setMode(mode.id, card); 
-        card.innerHTML = `<div class="card-title">${mode.title}</div><div class="card-desc">${mode.desc}</div>`;
-        modeGroup.appendChild(card);
-    });
-
-    const levelGroup = document.getElementById('level-group');
-    levelGroup.innerHTML = '';
-    manifest.levels.forEach((lvl, index) => {
-        const card = document.createElement('div');
-        card.id = `lvl-${lvl.id}`; 
-        card.className = `select-card ${index === 0 ? 'active' : ''}`;
-        card.onclick = () => window.setLevel(lvl.id, card);
-        card.innerHTML = `<div class="card-title">${lvl.title}</div><div class="card-desc">${lvl.desc}</div>`;
-        levelGroup.appendChild(card);
-    });
-
-    document.getElementById('sub-selection-area').classList.add('hidden');
-    document.getElementById('players-rounds-area').classList.remove('hidden');
-
-    const dailyContainer = document.getElementById('daily-btn-top').parentElement;
-    if (dailyContainer) dailyContainer.classList.toggle('hidden', !manifest.hasDaily);
-
-    // 👇 THE LOAD FIX: Force the UI to draw the sub-menu immediately on load! 👇
-    if (modeGroup.firstChild) {
-        window.setMode(manifest.modes[0].id, modeGroup.firstChild);
-    } else {
-        state.gameState.mode = manifest.modes[0].id;
-    }
-    state.gameState.level = manifest.levels[0].id;
-}
-
-export function populateStats() {} 
-
+/**
+ * Builds the Stats Modal. If on the Main Menu, shows global platform stats.
+ * If a game is active, delegates the rendering to the Cartridge.
+ */
 export function openStatsLocker() {
     const rawData = localStorage.getItem('yardbirdPlatformStats');
     const stats = rawData ? JSON.parse(rawData) : {};
@@ -131,7 +169,7 @@ export function openStatsLocker() {
 
     if(!modalContent) return; 
 
-    // The Platform ONLY handles the Main Menu stats. Everything else is delegated!
+    // PLATFORM CONTEXT: Show total games aggregated across all cartridges
     if (context === 'main_menu') {
         const stGames = stats.song_trivia?.gamesPlayed || 0;
         const fmGames = stats.fast_math?.gamesPlayed || 0;
@@ -153,7 +191,7 @@ export function openStatsLocker() {
             <button class="btn btn-main" onclick="hideModal('stats-modal')" style="width: 100%; margin-top: 15px;">Close</button>
         `;
     } 
-    // 👇 The Magic Hook: Pass the stats data to the active cartridge to render! 👇
+    // CARTRIDGE CONTEXT: Pass the specific stat block to the active game
     else if (window.activeCartridge && typeof window.activeCartridge.renderStatsUI === 'function') {
         window.activeCartridge.renderStatsUI(stats[context] || {}, modalContent);
     }
@@ -162,9 +200,21 @@ export function openStatsLocker() {
     else document.getElementById('stats-modal').classList.remove('hidden');
 }
 
-
+// Bind to window for HTML onclicks
 window.openStatsLocker = openStatsLocker;
+export function populateStats() {} // Note: Deprecated placeholder. Kept to prevent legacy HTML crash.
 
+
+// ==========================================
+// PHASE 5: THE ASYMMETRIC VIEW CONTROLLER
+// ==========================================
+
+/**
+ * Handles the "Jackbox/Kahoot" UI logic. 
+ * If a user is a "Client Controller" (Phone), hide all platform navigation
+ * so they cannot accidentally click out of the game.
+ * @param {string} context - The current state ('main_menu' or cartridge ID).
+ */
 export function updatePlatformUI(context) {
     const menuBtn = document.getElementById('menu-btn');
     const statsBtn = document.getElementById('stats-btn');
@@ -175,11 +225,13 @@ export function updatePlatformUI(context) {
     const isClient = state.isMultiplayer && !state.isHost;
 
     if (isClient) {
+        // CLIENT MODE: Lockdown the UI
         if (menuBtn) menuBtn.classList.add('hidden');
         if (statsBtn) statsBtn.classList.add('hidden');
         if (infoBtn) infoBtn.classList.add('hidden');
         if (header) header.classList.add('home-screen'); 
     } else {
+        // HOST/SOLO MODE: Allow navigation
         if (menuBtn) menuBtn.classList.toggle('hidden', context === 'main_menu');
         if (statsBtn) statsBtn.classList.toggle('hidden', context === 'main_menu');
         if (infoBtn) infoBtn.classList.remove('hidden');
@@ -195,14 +247,29 @@ export function updatePlatformUI(context) {
     const rulesContent = document.querySelector('#rules-modal .modal-content');
     if(!rulesContent) return;
 
-    // The Platform only knows about the Main Menu. 
-    // Everything else is delegated to the active cartridge!
+    // Delegate Rules Modal text to the Cartridge
     if (context === 'main_menu') {
         rulesContent.innerHTML = `<h2>Welcome to Yardbird's</h2><p style="color:#ccc; line-height: 1.6;">Select a game cartridge from the main menu to begin.<br><br><strong>Party Mode:</strong> Want to play with friends? Select a game first, then click the menu icon (☰) in the top left to host a game on your TV and use phones as Kahoot-style controllers!</p><button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top: 10px;">Got it!</button>`;
     } 
     else if (window.activeCartridge && window.activeCartridge.manifest.rulesHTML) {
         rulesContent.innerHTML = window.activeCartridge.manifest.rulesHTML;
     }
-        
-    
+}
+
+/**
+ * Generates an exportable playlist grid at the end of the game.
+ * Note: Primarily used by Song Trivia, but available globally for future music games.
+ */
+export function renderPlaylist(platform) {
+    document.getElementById('playlist-list-container').style.display = 'block';
+    document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active-plat'));
+    document.getElementById(`plat-${platform}`).classList.add('active-plat');
+
+    let playlistHTML = '';
+    state.songs.forEach((s, i) => {
+        const query = encodeURIComponent(`${s.artistName} ${s.trackName}`);
+        let url = platform === 'apple' ? s.trackViewUrl : (platform === 'spotify' ? `http://googleusercontent.com/spotify.com/8{query}` : `https://music.youtube.com/search?q=${query}`);
+        playlistHTML += `<li><a href="${url}" target="_blank">🎵 ${i + 1}. ${s.artistName} - ${s.trackName}</a></li>`;
+    });
+    document.getElementById('playlist-list').innerHTML = playlistHTML;
 }
