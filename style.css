@@ -1,155 +1,589 @@
-/* =========================================
-   YARDBIRD'S GAMES - MODERN LIGHT THEME
-   ========================================= */
+/* =============================================================================
+   ██╗   ██╗ █████╗ ██████╗ ██████╗ ██████╗ ██╗██████╗ ██████╗ ███████╗
+   ╚██╗ ██╔╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔════╝
+    ╚████╔╝ ███████║██████╔╝██║  ██║██████╔╝██║██████╔╝██║  ██║███████╗
+     ╚██╔╝  ██╔══██║██╔══██╗██║  ██║██╔══██╗██║██╔══██╗██║  ██║╚════██║
+      ██║   ██║  ██║██║  ██║██████╔╝██████╔╝██║██║  ██║██████╔╝███████║
+      ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝
 
-:root { 
-    /* Core Palette */
-    --primary: #6e45e2;      
-    --secondary: #88d3ce;    
-    --dark-text: #2d3436;    
-    --light-text: #ffffff;
-    --card-bg: #ffffff;      
-    --surface: #fdfdfd;
-    --border-light: #eeeeee; 
-    --success: #00b894;      
-    --fail: #d63031;         
-    --brand-glow: rgba(110, 69, 226, 0.3);
-    --text-muted: #888888;
-    
-    /* Player Colors (Darkened slightly for readability on white) */
-    --p1: #6e45e2; /* Purple */
-    --p2: #00b894; /* Mint */
-    --p3: #e84393; /* Pink */
-    --p4: #f39c12; /* Orange */
-    
+   YARDBIRD'S GAMES — style.css
+   Modern Light Theme  ·  Single-file design system
+   =============================================================================
+
+   ARCHITECTURE AT A GLANCE
+   ─────────────────────────────────────────────────────────────────────────────
+   This file is structured in 12 logical sections top-to-bottom, matching the
+   order components appear in index.html:
+
+     SECTION  1 — CSS Custom Properties (Design Tokens)
+     SECTION  2 — Global Reset & Body
+     SECTION  3 — Layout Shell  (.game-wrapper, .container)
+     SECTION  4 — Header & Navigation
+     SECTION  5 — Buttons
+     SECTION  6 — Form Controls  (Pills, Cards, Inputs)
+     SECTION  7 — Play Screen Components  (Prompt, Timer, Score, Visualizer)
+     SECTION  8 — Multiple Choice Buttons
+     SECTION  9 — Finale Screen  (Playlist export box)
+     SECTION 10 — Modals  (Overlays, Stats, Trophies)
+     SECTION 11 — Game-Card Cartridge Tiles  (Main Menu)
+     SECTION 12 — Screen Transitions & Responsive Overrides
+
+   DESIGN PHILOSOPHY
+   ─────────────────────────────────────────────────────────────────────────────
+   · Light-mode-first canvas:  The .container is white (#ffffff). All colours
+     are defined in :root and consumed via var(--token) so a dark-mode
+     toggle only needs to override the root block.
+   · Touch-first interactions:  Every interactive element has a :active rule,
+     -webkit-tap-highlight-color: transparent on *, and touch-action:
+     manipulation on body to kill the 300ms tap delay.
+   · Cartridge-agnostic:  No class is hard-tied to a specific game.
+     All cartridges reuse the same .mc-btn, .score-pill, .timer-bar-fill, etc.
+   · !important usage policy:  Only used where JS inline styles or highly
+     specific selectors would otherwise win (e.g., .hidden, .game-card hover,
+     client-mode overrides).  Avoid adding new !important rules.
+   ============================================================================= */
+
+
+/* =============================================================================
+   SECTION 1 — CSS CUSTOM PROPERTIES  (Design Tokens)
+   ─────────────────────────────────────────────────────────────────────────────
+   All colour, shadow, and dynamic-state values live here.
+   JS reads/writes --active-vis at runtime via:
+     document.documentElement.style.setProperty('--active-vis', color)
+   to tint the audio visualizer bars with the active player's colour.
+
+   COLOUR RATIONALE:
+     --primary      #6e45e2  Deep violet — brand identity, primary actions
+     --secondary    #88d3ce  Soft teal  — body gradient end-stop only
+     --dark-text    #2d3436  Near-black — all body copy on the white canvas
+     --card-bg      #ffffff  The container surface (white card on gradient bg)
+     --surface      #fdfdfd  Slightly-off-white for nested cards/inputs
+     --border-light #eeeeee  Hairline borders; light enough to recede visually
+     --success      #00b894  Mint green — correct answer feedback
+     --fail         #d63031  Crimson    — wrong answer feedback
+     --brand-glow   rgba(110,69,226,0.3)  Purple shadow used on all CTAs
+
+   PLAYER COLOURS (--p1 … --p4):
+     Assigned in order as players join a room (state.js `colors` array maps
+     to these variables).  Darkened relative to a typical neon palette so
+     they remain readable as text on the white canvas.
+   ============================================================================= */
+:root {
+    /* ── Core Palette ─────────────────────────────────── */
+    --primary:      #6e45e2;   /* Brand violet — buttons, borders, focus rings */
+    --secondary:    #88d3ce;   /* Teal — body background gradient only         */
+    --dark-text:    #2d3436;   /* Near-black body copy on white canvas          */
+    --light-text:   #ffffff;   /* White text (buttons, overlays)                */
+    --card-bg:      #ffffff;   /* .container background                         */
+    --surface:      #fdfdfd;   /* Nested card / input background                */
+    --border-light: #eeeeee;   /* Hairline borders — recedes on white           */
+    --success:      #00b894;   /* Mint — correct answer state                   */
+    --fail:         #d63031;   /* Red — wrong answer state                      */
+    --brand-glow:   rgba(110, 69, 226, 0.3); /* Violet box-shadow on CTAs       */
+    --text-muted:   #888888;   /* Secondary labels, descriptions                */
+
+    /* ── Player Colours (indexed 1-4, assigned by join order) ── */
+    --p1: #6e45e2;   /* P1 — Purple (matches --primary)  */
+    --p2: #00b894;   /* P2 — Mint   (matches --success)  */
+    --p3: #e84393;   /* P3 — Hot pink                    */
+    --p4: #f39c12;   /* P4 — Amber — also used for bonus round labels */
+
+    /* ── Dynamic State Token ──────────────────────────── */
+    /* Set at runtime by JS to match the active player's colour.
+       Controls .visualizer .vis-bar fill during audio playback.
+       Default = --primary (Player 1 / solo mode). */
     --active-vis: var(--primary);
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
-body { 
+/* =============================================================================
+   SECTION 2 — GLOBAL RESET & BODY
+   ─────────────────────────────────────────────────────────────────────────────
+   * reset:
+     · box-sizing: border-box on every element so padding never
+       overflows a container unexpectedly.
+     · -webkit-tap-highlight-color: transparent removes the grey
+       flash on mobile tap — essential for a game feel.
+     · outline: none removes browser focus rings globally.
+       (Accessibility note: if you add keyboard support later,
+        restore outlines for :focus-visible selectors.)
+
+   body:
+     · The purple-to-teal gradient fills the viewport behind the
+       white .container card; visible as the "frame" on desktop.
+     · display:flex + justify-content:center centres .game-wrapper.
+     · user-select: none prevents accidental text selection during
+       rapid tapping in MC and math rounds.
+     · touch-action: manipulation eliminates the 300ms tap delay
+       on iOS/Android without needing a FastClick library.
+   ============================================================================= */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* No grey flash on mobile tap */
+    outline: none;                             /* Remove default focus rings  */
+}
+
+body {
+    /* Diagonal gradient — visible as frame behind the white card */
     background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: var(--dark-text); 
-    font-family: 'Segoe UI', system-ui, sans-serif; 
-    margin: 0; 
-    display: flex; 
-    justify-content: center; 
-    min-height: 100vh; 
-    padding: 10px; 
-    -webkit-user-select: none; 
-    user-select: none; 
-    touch-action: manipulation; 
+    color: var(--dark-text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;    /* Centre .game-wrapper horizontally */
+    min-height: 100vh;           /* Full viewport height always       */
+    padding: 10px;               /* Breathing room at viewport edges  */
+    -webkit-user-select: none;   /* Prevent text selection on iOS     */
+    user-select: none;
+    touch-action: manipulation;  /* Kill 300ms tap delay everywhere   */
 }
 
-.game-wrapper { width: 100%; max-width: 600px; display: flex; justify-content: center; }
 
-/* THE CLEAN CANVAS */
-.container { 
-    background: var(--card-bg); 
-    padding: 2rem; 
-    border-radius: 20px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-    text-align: center; 
-    border: none; 
-    width: 100%; 
-    flex: 1 1 100%; 
-    max-width: 600px; 
-    min-height: 85vh; 
-    margin-bottom: 20px; 
-    align-self: center; 
-    display: flex; 
-    flex-direction: column; 
+/* =============================================================================
+   SECTION 3 — LAYOUT SHELL  (.game-wrapper · .container)
+   ─────────────────────────────────────────────────────────────────────────────
+   .game-wrapper
+     · A thin centering band that constrains max-width to 600px.
+     · On desktop this creates the "phone in a frame" look.
+     · On mobile it fills the viewport edge-to-edge.
+
+   .container
+     · THE white card — the game's visible canvas.
+     · display:flex + flex-direction:column allows each child screen
+       (#setup-screen, #play-screen, etc.) to use flex:1 and fill the
+       remaining height without hard-coding pixel heights.
+     · min-height:85vh keeps the card tall even when content is sparse
+       (e.g., the daily button screen between rounds).
+     · border-radius:20px + box-shadow gives the card a lifted feel
+       against the gradient backdrop.
+
+   Screen utility rules:
+     · The four main screens (#play-screen, #final-screen, etc.) use
+       flex:1 and justify-content:center so their content is always
+       vertically centred inside the card regardless of how much content
+       is on screen at any time.
+     · .hidden { display:none !important } — the single visibility toggle
+       used by showModal(), hideModal(), and all screen transitions in JS.
+       The !important ensures inline styles from JS never accidentally
+       override a hidden element.
+   ============================================================================= */
+.game-wrapper {
+    width: 100%;
+    max-width: 600px;   /* Caps the app at a phone-width column on wide screens */
+    display: flex;
+    justify-content: center;
 }
 
-#play-screen, #final-screen, #setup-screen, #main-menu-screen { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+/* The white card — all game screens live inside this */
+.container {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    border: none;
+    width: 100%;
+    flex: 1 1 100%;
+    max-width: 600px;
+    min-height: 85vh;        /* Keep card tall even with sparse content */
+    margin-bottom: 20px;
+    align-self: center;
+    display: flex;
+    flex-direction: column;  /* Children stack vertically; screens use flex:1 */
+}
+
+/* Each screen fills remaining container height and centres its content */
+#play-screen,
+#final-screen,
+#setup-screen,
+#main-menu-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Master visibility toggle — used by showModal() / hideModal() / all JS screens.
+   !important wins over any specificity or inline style. */
 .hidden { display: none !important; }
 
-/* HEADER */
-#game-header { position: relative; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; min-height: 40px; }
-.header-btn { position: absolute; width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border-light); color: var(--text-muted); font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding-bottom: 2px; }
-.header-btn:hover { border-color: var(--primary); color: var(--primary); transform: scale(1.1); background: white; }
-#info-btn { right: 40px; }
-#stats-btn { right: 0; font-size: 0.9rem; } 
-#main-title { 
-    margin: 0; 
-    font-size: 2.2rem; /* Much bigger! */
-    line-height: 1.2; 
-    text-transform: uppercase; 
-    font-weight: 900; /* Maximum thickness */
-    letter-spacing: 4px; /* Cinematic spacing */
-    padding: 0 80px 0 45px; /* Keeps your buttons aligned */
-    text-align: center; 
-    /* The Magic Gradient */
+
+/* =============================================================================
+   SECTION 4 — HEADER & NAVIGATION
+   ─────────────────────────────────────────────────────────────────────────────
+   #game-header
+     · position:relative is the anchor for the absolutely-positioned
+       icon buttons (.header-btn) that flank the title.
+     · min-height:40px matches the button diameter so the row never
+       collapses when the title is short.
+
+   .header-btn
+     · All three icon buttons (☰ menu, ℹ info, 📊 stats) share this class.
+     · Circular pill with a subtle border; positioned absolutely so they
+       don't affect the title's horizontal centering.
+     · position offsets are set per-ID (#info-btn, #stats-btn) below.
+     · JS calls element.classList.add/remove('hidden') to show/hide
+       individual buttons depending on the active screen.
+
+   #main-title
+     · Gradient text via -webkit-background-clip:text + transparent fill.
+     · Padding:  left 45px (clears ☰ button) / right 80px (clears two
+       right-side buttons).
+     · On the home screen (.home-screen modifier added by JS) padding resets
+       to 0 and the title fills the full width centred.
+
+   #final-subtitle
+     · display:none !important — always hidden.
+       Content is injected by JS but visually suppressed; acts as a
+       data carrier read by share/stats logic without being seen.
+       NOTE: If you want the subtitle visible in a future design, just
+       remove this rule.
+   ============================================================================= */
+#game-header {
+    position: relative;      /* Anchor for absolutely-positioned icon buttons */
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;        /* Prevents row collapse when title is empty    */
+}
+
+/* Shared style for all three header icon buttons (☰  ℹ  📊) */
+.header-btn {
+    position: absolute;      /* Float left/right without disturbing the title */
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;      /* Perfect circle                                */
+    background: var(--surface);
+    border: 2px solid var(--border-light);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding-bottom: 2px;     /* Optical vertical centering for text glyphs   */
+}
+.header-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.1);
+    background: white;
+}
+
+/* Individual button positions (both measured from the right edge) */
+#info-btn  { right: 40px; }   /* ℹ — second from right; leaves room for 📊 */
+#stats-btn { right: 0;    font-size: 0.9rem; }  /* 📊 — far right corner    */
+/* Note: ☰ menu button uses inline style="left:0" in index.html             */
+
+/* Page title — gradient clipped text technique */
+#main-title {
+    margin: 0;
+    font-size: 2.2rem;
+    line-height: 1.2;
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: 4px;
+    padding: 0 80px 0 45px;  /* Clears ☰ left (45px) and ℹ/📊 right (80px) */
+    text-align: center;
+    /* Gradient text — visible on WebKit and most modern browsers */
     background: linear-gradient(135deg, var(--primary), #8e2de2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+
+/* #final-subtitle: always hidden — acts as a data carrier for JS only.
+   Remove this rule if you want it visible in a future redesign. */
 #final-subtitle { display: none !important; }
 
-/* ✨ DYNAMIC HOME HEADER ✨ */
-#game-header.home-screen #info-btn { right: 0 !important; }
-#game-header.home-screen #main-title { 
-    font-size: 1.9rem !important; 
-    letter-spacing: 5px; 
-    padding: 0 !important; 
+/* ── HOME SCREEN MODIFIER ───────────────────────────────────────────────────
+   Added/removed by updatePlatformUI() in ui.js when navigating to/from
+   the main menu.  On the home screen the title expands to fill the full
+   header width (no flanking buttons needed) and the ℹ info button shifts
+   all the way right to compensate. */
+#game-header.home-screen #info-btn {
+    right: 0 !important;  /* Shift ℹ to far right when ☰ and 📊 are hidden */
+}
+#game-header.home-screen #main-title {
+    font-size: 1.9rem !important;
+    letter-spacing: 5px;
+    padding: 0 !important;   /* Remove side padding — title owns the full row */
 }
 
-.section-label { display: block; text-align: left; font-size: 0.75rem; color: var(--text-muted); margin: 25px 0 10px 0; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+/* ── SECTION LABEL ──────────────────────────────────────────────────────────
+   Small uppercase caption above mode/difficulty/rounds selectors.
+   Used in setup-screen only.  Left-aligned for scannability. */
+.section-label {
+    display: block;
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 25px 0 10px 0;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
 
-/* BUTTONS */
-.btn { cursor: pointer; border: none; border-radius: 12px; font-weight: 800; text-transform: uppercase; transition: 0.2s; padding: 18px; width: 100%; font-size: 1.1rem; }
-.btn-daily { background: var(--primary); color: #fff; box-shadow: 0 4px 15px var(--brand-glow); margin-bottom: 5px; }
-.btn-daily:hover { box-shadow: 0 6px 20px var(--brand-glow); transform: translateY(-2px); }
-.btn-main { background: var(--primary); color: white; font-size: 1.2rem; box-shadow: 0 4px 15px var(--brand-glow); }
-.btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--brand-glow); }
-#start-multiplayer-btn:disabled { background: #e0e0e0 !important; color: #a0a0a0 !important; cursor: not-allowed; transform: none; box-shadow: none; }
-.btn-alt { background: var(--surface); color: var(--dark-text); border: 2px solid var(--border-light); font-size: 0.9rem; }
-.btn-alt:hover { border-color: var(--primary); color: var(--primary); }
 
-.btn-reset { background: #f0f0f0; color: var(--fail); font-size: 0.8rem; padding: 10px; border: 2px solid #f0f0f0; margin-top: 20px; width: auto; min-width: 120px; }
-.btn-reset:hover { background: #fff; border-color: var(--fail); }
+/* =============================================================================
+   SECTION 5 — BUTTONS
+   ─────────────────────────────────────────────────────────────────────────────
+   Button hierarchy (from most to least prominent):
 
-.separator-line { height: 2px; background: var(--border-light); border-radius: 2px; margin: 25px 0; border: none; }
+     .btn            — Base class.  Full-width, uppercase, rounded.
+                       All button variants extend this.
+     .btn-daily      — Purple CTA for the "Today Three" daily challenge.
+                       Same colour as .btn-main but used only for that
+                       single feature so it can be restyled independently.
+     .btn-main       — Primary action button (Play, Submit, Join, etc.).
+                       Purple fill, white text, brand-glow box-shadow.
+     .btn-alt        — Secondary/ghost button (Multiple Choice lifeline,
+                       Back to Solo, etc.).  Surface fill with a border.
+     .btn-reset      — Destructive/minor action (Reset Stats, End Game).
+                       Grey fill, red text. Smaller than primary buttons.
 
-/* TOUCH PILLS & CARDS */
+   Disabled state:
+     #start-multiplayer-btn:disabled — the "Start Game" button in the
+     host lobby is disabled until ≥1 player joins.  Overrides all hover
+     and shadow rules with !important because specificity would otherwise
+     let :hover rules fire on disabled buttons in some browsers.
+
+   Separator:
+     .separator-line is a thin <hr> replacement used between the daily
+     button and the custom game section on the setup screen.
+   ============================================================================= */
+
+/* Base button — all variants compose on top of this */
+.btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: 0.2s;
+    padding: 18px;
+    width: 100%;
+    font-size: 1.1rem;
+}
+
+/* Daily challenge CTA — identical to btn-main visually; kept separate
+   so it can be uniquely greyed out when already played today. */
+.btn-daily {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 15px var(--brand-glow);
+    margin-bottom: 5px;
+}
+.btn-daily:hover {
+    box-shadow: 0 6px 20px var(--brand-glow);
+    transform: translateY(-2px);
+}
+
+/* Primary CTA — all main action buttons */
+.btn-main {
+    background: var(--primary);
+    color: white;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px var(--brand-glow);
+}
+.btn-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--brand-glow);
+}
+
+/* Multiplayer Start button locked until players join —
+   !important needed to override .btn-main hover rules above */
+#start-multiplayer-btn:disabled {
+    background: #e0e0e0 !important;
+    color: #a0a0a0 !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Ghost / secondary button — lifeline, back, cancel actions */
+.btn-alt {
+    background: var(--surface);
+    color: var(--dark-text);
+    border: 2px solid var(--border-light);
+    font-size: 0.9rem;
+}
+.btn-alt:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Destructive/minor action — reset stats, end game, back links.
+   width:auto + min-width:120px keeps it compact next to primary buttons. */
+.btn-reset {
+    background: #f0f0f0;
+    color: var(--fail);
+    font-size: 0.8rem;
+    padding: 10px;
+    border: 2px solid #f0f0f0;
+    margin-top: 20px;
+    width: auto;
+    min-width: 120px;
+}
+.btn-reset:hover {
+    background: #fff;
+    border-color: var(--fail);
+}
+
+/* Visual divider — used between daily button and custom game section */
+.separator-line {
+    height: 2px;
+    background: var(--border-light);
+    border-radius: 2px;
+    margin: 25px 0;
+    border: none;
+}
+
+
+/* =============================================================================
+   SECTION 6 — FORM CONTROLS  (Pills · Cards · Inputs)
+   ─────────────────────────────────────────────────────────────────────────────
+   THREE CONTROL TYPES for selecting game options:
+
+   A) PILLS  (.pill / .pill-grid / .pill-group)
+      · Used for: Round count (5/10/15/20) and sub-genre selection.
+      · .pill-group — flex row, wraps on overflow.
+      · .pill-grid  — 2-column CSS grid for the rounds picker.
+      · .pill.active — filled with --primary; used as the "selected" state.
+      · .pill-wide   — wider variant for text-heavy sub-option labels.
+
+   B) SELECT CARDS  (.select-card / .card-group)
+      · Used for: Game Mode and Difficulty selectors.
+      · .card-group — vertical flex column; built by buildSetupScreen() in ui.js.
+      · .select-card.active — shows a 6px left accent bar via ::before pseudo.
+        This is a standard "selected tab" pattern; the bar uses position:absolute
+        on the card (which has overflow:hidden to clip it cleanly).
+
+   C) TEXT INPUTS  (input[type="text/number"], select)
+      · Unified appearance: white bg, light border, rounded corners.
+      · -webkit-appearance:none / appearance:none removes OS-native styling
+        (particularly important for iOS number inputs and selects).
+      · Focus ring uses box-shadow (not outline) so it honours border-radius.
+      · The <select> element gets a custom SVG chevron via background-image
+        to replace the OS-native dropdown arrow with one that matches the
+        light-mode colour scheme. The SVG is URL-encoded inline.
+   ============================================================================= */
+
+/* ── A) PILLS ─────────────────────────────────────────────────────────────── */
+
+/* Flex row container — used for sub-option pills */
 .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
-.pill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-.pill { flex: 1; min-width: 60px; background: white; border: 2px solid var(--border-light); color: var(--text-muted); padding: 12px; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; user-select: none; display: flex; align-items: center; justify-content: center; text-align: center; }
-.pill.active { background: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 4px 10px var(--brand-glow); }
+/* 2-column grid — used for the rounds selector (5 / 10 / 15 / 20) */
+.pill-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Individual pill — selected state is toggled by setPill() in ui.js */
+.pill {
+    flex: 1;
+    min-width: 60px;
+    background: white;
+    border: 2px solid var(--border-light);
+    color: var(--text-muted);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+/* Active/selected pill — toggled by setPill() / setSub() in ui.js */
+.pill.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 10px var(--brand-glow);
+}
+/* Wide pill variant for longer text labels (e.g. "Shwe Special (90s)") */
 .pill-wide { min-width: 140px; font-size: 0.9rem; padding: 12px 10px; }
 
-.card-group { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.3s; }
-.select-card { background: white; border: 2px solid var(--border-light); border-radius: 14px; padding: 15px; cursor: pointer; text-align: left; transition: all 0.2s; position: relative; overflow: hidden; }
-.select-card.active { border-color: var(--primary); background: rgba(110, 69, 226, 0.03); }
-.select-card.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--primary); }
-.card-title { font-size: 1.05rem; font-weight: 800; color: var(--dark-text); margin-bottom: 4px; }
-.card-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.3; }
 
-/* INPUTS */
-input[type="text"], input[type="number"], select { 
-    background: white; 
-    border: 2px solid var(--border-light); 
-    color: var(--dark-text); 
-    padding: 15px; 
-    border-radius: 12px; 
-    font-size: 1.1rem; 
-    width: 100%; 
-    outline: none; 
-    margin-top: 10px; 
+/* ── B) SELECT CARDS ──────────────────────────────────────────────────────── */
+
+/* Vertical stack of mode/difficulty cards */
+.card-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: opacity 0.3s; /* Used to grey out locked difficulty section */
+}
+
+/* Individual card — built dynamically by buildSetupScreen() in ui.js */
+.select-card {
+    background: white;
+    border: 2px solid var(--border-light);
+    border-radius: 14px;
+    padding: 15px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    position: relative;   /* Needed for ::before accent bar positioning */
+    overflow: hidden;     /* Clips the ::before bar to the card boundary */
+}
+/* Active/selected card — purple border + subtle tinted background */
+.select-card.active {
+    border-color: var(--primary);
+    background: rgba(110, 69, 226, 0.03);
+}
+/* Left-edge accent bar — the visual "selected" indicator */
+.select-card.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: var(--primary);
+}
+
+/* Card text elements — used by buildSetupScreen() template strings */
+.card-title { font-size: 1.05rem; font-weight: 800; color: var(--dark-text); margin-bottom: 4px; }
+.card-desc  { font-size: 0.8rem;  color: var(--text-muted); line-height: 1.3; }
+
+
+/* ── C) TEXT INPUTS ───────────────────────────────────────────────────────── */
+
+/* Unified base style for all text / number inputs and selects */
+input[type="text"],
+input[type="number"],
+select {
+    background: white;
+    border: 2px solid var(--border-light);
+    color: var(--dark-text);
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    width: 100%;
+    outline: none;
+    margin-top: 10px;
     transition: all 0.3s ease;
-    -webkit-appearance: none; 
+    /* Remove OS-native styling (iOS number spinners, select chrome) */
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
 }
-input[type="text"]:focus, input[type="number"]:focus, select:focus { 
-    border-color: var(--primary); 
+/* Focus ring — uses box-shadow instead of outline to honour border-radius */
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    border-color: var(--primary);
     background: #fcfcfc;
-    box-shadow: 0 0 0 4px rgba(110, 69, 226, 0.1);
+    box-shadow: 0 0 0 4px rgba(110, 69, 226, 0.1); /* Soft violet halo */
 }
 input::placeholder { color: #aaaaaa; font-size: 0.95rem; }
 
-/* Custom dark dropdown arrow for light mode */
+/* Custom chevron arrow for <select> elements — replaces OS default.
+   SVG is a dark (#2d3436) downward triangle, URL-encoded inline.
+   background-position aligns it 15px from the right edge, vertically centred. */
 select {
     background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232d3436%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
     background-repeat: no-repeat;
@@ -157,7 +591,28 @@ select {
     background-size: 12px auto;
 }
 
-/* Add this to style.css */
+
+/* =============================================================================
+   SECTION 7 — PLAY SCREEN COMPONENTS
+   ─────────────────────────────────────────────────────────────────────────────
+   All components that appear on #play-screen during active gameplay:
+
+   A) .prompt-text      — Large question / prompt headline
+   B) .touch-opt        — Consensus cartridge interactive vote buttons
+   C) client-mode       — Phone controller CSS lockdown
+   D) .player-tag       — Round / player turn label strip
+   E) .timer-bar-*      — Animated countdown progress bar
+   F) .timer-display    — Legacy text timer (backwards compat shim)
+   G) .score-bar / .score-pill — Per-player live score cards
+   H) .visualizer       — Animated audio bars (Song Trivia only)
+   I) .fade-in          — Entrance animation for feedback and art
+   J) #feedback         — Round result text container
+   K) .cover-art        — Album artwork revealed after each guess
+   ============================================================================= */
+
+/* ── A) PROMPT TEXT ───────────────────────────────────────────────────────── */
+/* Large question display — used by Who Said It, Consensus, and Fast Math.
+   Responsive override at line SECTION 12 shrinks this to 1.4rem on mobile. */
 .prompt-text {
     font-size: 2.5rem;
     font-weight: 900;
@@ -167,187 +622,590 @@ select {
 }
 
 
-/* =========================================
-   CONSENSUS TOUCH BUTTON STATES
-   ========================================= */
+/* ── B) CONSENSUS TOUCH BUTTON STATES ────────────────────────────────────── */
+/* The Consensus cartridge uses these on its vote/predict buttons.
+   .touch-opt provides the smooth spring transition.
+   .touch-opt.active fires when the user taps a vote option — gives a
+   tactile "locked in" feel before the full submission. */
 .touch-opt {
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); /* Spring easing */
 }
-
 .touch-opt.active {
     border-color: var(--primary) !important;
-    background-color: rgba(110, 69, 226, 0.05) !important; 
+    background-color: rgba(110, 69, 226, 0.05) !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px var(--brand-glow);
     color: var(--primary) !important;
-}    
+}
 
-/* =========================================
-   📱 NUCLEAR CLIENT MODE OVERRIDE
-   ========================================= */
-body.client-mode .header-btn { display: none !important; }
-body.client-mode #game-header { justify-content: center !important; }
-body.client-mode #main-title { padding: 0 !important; font-size: 1.9rem !important; letter-spacing: 5px !important; text-align: center !important; }    
 
-/* PLAY SCREEN & TIMER BAR */
-.player-tag { 
-    font-size: 1.1rem; 
-    font-weight: 800; 
-    padding: 12px; 
-    border-radius: 12px; 
-    margin-bottom: 10px; 
-    text-transform: uppercase; 
-    border: 2px solid var(--border-light) !important; 
-    color: var(--primary) !important; 
-    transition: all 0.4s ease; 
+/* ── C) CLIENT MODE — PHONE CONTROLLER LOCKDOWN ──────────────────────────── */
+/* Applied to <body> by handleJoinScreen() in multiplayer.js when a phone
+   joins a room.  Hides ALL header navigation buttons so the phone player
+   cannot accidentally navigate away mid-game.  The title centres itself
+   to fill the now-empty header row.
+
+   "NUCLEAR" means these use !important to absolutely override everything —
+   no JS state, hover style, or component-level rule can re-show these. */
+body.client-mode .header-btn        { display: none !important; }
+body.client-mode #game-header       { justify-content: center !important; }
+body.client-mode #main-title        {
+    padding: 0 !important;
+    font-size: 1.9rem !important;
+    letter-spacing: 5px !important;
+    text-align: center !important;
+}
+
+
+/* ── D) PLAYER TAG — Round / Turn Label ──────────────────────────────────── */
+/* Strip above the timer showing "ROUND 3/10", "PLAYER 2 TURN", or
+   "TODAY'S SONG 1/3" in daily mode.
+   Colour and border-color are set via inline JS styles; the !important here
+   ensures those inline values win over any inherited theme rules. */
+.player-tag {
+    font-size: 1.1rem;
+    font-weight: 800;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    border: 2px solid var(--border-light) !important; /* Overridden inline per-player */
+    color: var(--primary) !important;                 /* Overridden inline per-player */
+    transition: all 0.4s ease;
     background: white;
 }
 
-/* 🚀 NEW TIMER BAR CLASSES */
-.timer-bar-container { 
-    width: 100%; 
-    height: 8px; 
-    background: var(--border-light); 
-    border-radius: 10px; 
-    margin: 10px 0 20px 0; 
-    overflow: hidden; 
+
+/* ── E) TIMER BAR ─────────────────────────────────────────────────────────── */
+/* A horizontal progress bar that drains over the round time limit.
+   JS injects the inner fill div each round and updates its width via:
+     timerFill.style.width = `${percentage}%`
+   The CSS transition handles the smooth linear drain animation —
+   width transitions at exactly 1s per tick to match the setInterval.
+
+   COLOUR STATES:
+     Default  → var(--primary)  purple
+     Final 3s → var(--fail)     red  (set by JS: timerFill.style.backgroundColor)
+
+   CLIENT PHONE TIMER:
+     The phone uses id="client-timer-fill" (same classes) synced via Firebase
+     timeLeft listener in multiplayer.js. */
+.timer-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--border-light);  /* Track colour (unfilled portion)      */
+    border-radius: 10px;
+    margin: 10px 0 20px 0;
+    overflow: hidden;                 /* Clips fill div corners to track shape */
 }
-.timer-bar-fill { 
-    height: 100%; 
-    width: 100%; 
-    background: var(--primary); 
-    transition: width 1s linear, background-color 0.3s ease; 
+.timer-bar-fill {
+    height: 100%;
+    width: 100%;                      /* Starts full; JS shrinks it each tick  */
+    background: var(--primary);
+    /* width 1s linear: matches the 1-second setInterval exactly.
+       background-color 0.3s ease: smooth red transition at 3 seconds. */
+    transition: width 1s linear, background-color 0.3s ease;
 }
 
-/* Kept for backwards compatibility until JS is fully updated */
-.timer-display { font-size: 3.5rem; font-weight: 900; margin: 5px 0; font-family: 'Courier New', monospace; transition: color 0.3s; color: var(--dark-text); }
 
-.score-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
-.score-pill { flex: 1; min-width: 65px; background: white; border: 2px solid var(--border-light); border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-.score-pill .p-name { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
-.score-pill .p-pts { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 900; margin: 4px 0; color: var(--dark-text); }
+/* ── F) TIMER DISPLAY (Legacy Text Shim) ─────────────────────────────────── */
+/* The #timer div originally showed a large countdown number ("30", "29"…).
+   JS now replaces the div's innerHTML with the bar above each round.
+   This class is kept so old cartridge code that writes a text number
+   into #timer still renders legibly — it just shows the old-school digits
+   instead of a bar. Safe to remove once all cartridges are updated. */
+.timer-display {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin: 5px 0;
+    font-family: 'Courier New', monospace;
+    transition: color 0.3s;
+    color: var(--dark-text);
+}
+
+
+/* ── G) SCOREBOARD ────────────────────────────────────────────────────────── */
+/* .score-bar — horizontal flex row of score pills, one per player.
+   Rebuilt after every round by updateLeaderboard() / evaluateGuess().
+
+   .score-pill child structure:
+     .p-name   — "P1" / "SCORE" label  (player index colour)
+     .p-pts    — The raw or normalised score (monospace font)
+     .p-streak — "🔥 N" streak counter  (opacity:0 when streak is 0)
+
+   border-color is set inline per-player using colors[i] from state.js,
+   which maps to --p1/p2/p3/p4 tokens. */
+.score-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.score-pill {
+    flex: 1;
+    min-width: 65px;
+    background: white;
+    border: 2px solid var(--border-light); /* Overridden inline per-player colour */
+    border-radius: 12px;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+.score-pill .p-name   { font-size: 0.7rem;  font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
+.score-pill .p-pts    { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 900; margin: 4px 0; color: var(--dark-text); }
 .score-pill .p-streak { font-size: 0.65rem; font-weight: bold; }
 
-.visualizer { display: flex; gap: 5px; justify-content: center; height: 25px; align-items: flex-end; margin-bottom: 5px; opacity: 0; transition: opacity 0.3s; }
-.vis-bar { width: 8px; background: var(--border-light); border-radius: 4px 4px 0 0; animation: bounce 0.5s infinite alternate; }
-.vis-bar:nth-child(2) { animation-delay: 0.15s; }
-.vis-bar:nth-child(3) { animation-delay: 0.3s; }
-@keyframes bounce { from { height: 5px; } to { height: 25px; } }
-.visualizer.active { opacity: 1; }
-.visualizer.active .vis-bar { background: var(--active-vis); }
-.visualizer.paused .vis-bar { animation-play-state: paused; height: 5px; background: var(--border-light) !important; }
 
-.fade-in { animation: fadeIn 0.4s ease-out forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* ── H) AUDIO VISUALIZER ─────────────────────────────────────────────────── */
+/* Three bouncing bars that animate during audio playback (Song Trivia only).
+   STATES managed by JS classList:
+     .hidden       — opacity:0, hidden off screen (between rounds)
+     .active       — opacity:1, bars bounce and use --active-vis colour
+     .paused       — bars freeze at min height, return to grey
 
-#feedback { margin: 15px 0; min-height: 60px; font-weight: 600; font-size: 1rem; line-height: 1.4; word-wrap: break-word; color: var(--dark-text); }
-.cover-art { width: 150px; height: 150px; border-radius: 15px; margin: 0 auto 15px auto; display: none; border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); object-fit: cover; }
+   Animation stagger: each bar uses a different animation-delay so they
+   bounce at offset phases, creating a stereo waveform feel.
 
-/* 🚀 NEW HOLLOW-TO-SOLID MULTIPLE CHOICE BUTTONS */
-.mc-btn { 
-    background: white; 
-    border: 2px solid var(--border-light); 
-    color: var(--dark-text); 
-    padding: 16px; 
-    border-radius: 12px; 
-    font-size: 1.05rem; 
-    font-weight: 600; 
-    width: 100%; 
-    cursor: pointer; 
-    transition: all 0.2s ease; 
-    margin-bottom: 10px; 
+   --active-vis is set to the active player's colour (or --primary for solo)
+   so the bars always match the player tag above them. */
+.visualizer {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    height: 25px;
+    align-items: flex-end;
+    margin-bottom: 5px;
+    opacity: 0;               /* Hidden by default; JS adds .active to show */
+    transition: opacity 0.3s;
 }
-.mc-btn:hover:not(:disabled) { 
-    background: #fdfdfd; 
-    border-color: var(--primary); 
-    transform: translateY(-2px); 
-    box-shadow: 0 4px 12px var(--brand-glow); 
+.vis-bar {
+    width: 8px;
+    background: var(--border-light);
+    border-radius: 4px 4px 0 0;
+    animation: bounce 0.5s infinite alternate;
+}
+.vis-bar:nth-child(2) { animation-delay: 0.15s; } /* Stagger bar 2 */
+.vis-bar:nth-child(3) { animation-delay: 0.30s; } /* Stagger bar 3 */
+
+@keyframes bounce {
+    from { height: 5px;  }  /* Trough */
+    to   { height: 25px; }  /* Peak   */
+}
+
+.visualizer.active           { opacity: 1; }
+.visualizer.active  .vis-bar { background: var(--active-vis); }  /* Player colour */
+.visualizer.paused  .vis-bar {
+    animation-play-state: paused;
+    height: 5px;
+    background: var(--border-light) !important; /* Force grey while paused */
+}
+
+
+/* ── I) FADE-IN ENTRANCE ANIMATION ───────────────────────────────────────── */
+/* Applied by JS to #feedback and #reveal-art after each round evaluation.
+   Slides content up 10px and fades in over 0.4s. */
+.fade-in { animation: fadeIn 0.4s ease-out forwards; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── J) FEEDBACK CONTAINER ────────────────────────────────────────────────── */
+/* Receives HTML injected by evaluateGuess() each round.
+   min-height:60px prevents the layout from jumping when the content
+   clears between rounds.  word-wrap:break-word handles long song titles. */
+#feedback {
+    margin: 15px 0;
+    min-height: 60px;
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+    color: var(--dark-text);
+}
+
+
+/* ── K) ALBUM ART REVEAL ──────────────────────────────────────────────────── */
+/* Square thumbnail shown after each Song Trivia guess.
+   display:none by default — JS sets it to 'block' and adds .fade-in.
+   The 400×400 iTunes artwork is displayed at 150×150 CSS pixels;
+   object-fit:cover handles any non-square edge cases. */
+.cover-art {
+    width: 150px;
+    height: 150px;
+    border-radius: 15px;
+    margin: 0 auto 15px auto;
+    display: none;              /* JS toggles to block after reveal */
+    border: 3px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+}
+
+
+/* =============================================================================
+   SECTION 8 — MULTIPLE CHOICE BUTTONS  (.mc-btn)
+   ─────────────────────────────────────────────────────────────────────────────
+   Used by: Song Trivia lifeline, Fast Math, Who Said It, Consensus.
+   Buttons are injected dynamically by JS each round; this class handles
+   all visual states.
+
+   STATE TRANSITIONS:
+     Default       — White fill, light border, dark text.
+     :hover        — Lifts 2px, purple border + glow, text turns purple.
+                     :not(:disabled) guard prevents hover on answered buttons.
+     :active       — Pressed down 1px (physical click feel).
+     :disabled     — Greyed out (opacity 0.6) after a choice is made;
+                     prevents double-tapping.
+     .correct      — Solid green fill + glow (toggled by JS on correct pick).
+     .wrong        — Solid red fill + glow   (toggled by JS on wrong pick).
+
+   The !important on .correct and .wrong ensures they override both the
+   default white styles AND any :hover rule that fires on rapid taps.
+   ============================================================================= */
+.mc-btn {
+    background: white;
+    border: 2px solid var(--border-light);
+    color: var(--dark-text);
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+}
+/* Hover — only fires when the button is still enabled */
+.mc-btn:hover:not(:disabled) {
+    background: #fdfdfd;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--brand-glow);
     color: var(--primary);
 }
-.mc-btn:active { transform: translateY(1px) !important; box-shadow: none !important; }
+/* Active/pressed — overrides the hover lift with a downward press */
+.mc-btn:active  { transform: translateY(1px) !important; box-shadow: none !important; }
+/* Disabled — after any answer is submitted, all sibling buttons go dim */
 .mc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.mc-btn.correct { background-color: var(--success) !important; color: white !important; border-color: var(--success) !important; box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4) !important;}
-.mc-btn.wrong { background-color: var(--fail) !important; color: white !important; border-color: var(--fail) !important; box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4) !important;}
-
-/* PLAYLIST EXPORT */
-.playlist-box { background: #fdfdfd; border: 2px solid var(--border-light); border-radius: 12px; padding: 15px; text-align: left; margin-top: 20px; }
-.playlist-box h4 { margin: 0 0 12px 0; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; text-align: center; }
-.platform-toggles { display: flex; gap: 8px; margin-bottom: 5px; }
-.plat-btn { flex: 1; background: white; border: 2px solid var(--border-light); color: var(--text-muted); padding: 10px 5px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: all 0.2s; }
-.active-plat { background: var(--primary); color: #fff !important; border-color: var(--primary); box-shadow: 0 4px 10px var(--brand-glow); }
-.playlist-list-container { max-height: 200px; overflow-y: auto; padding-right: 5px; display: none; margin-top: 15px; }
-.playlist-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 1.8; }
-.playlist-list a { color: var(--dark-text); text-decoration: none; display: flex; gap: 8px; border-bottom: 1px solid var(--border-light); padding: 10px 5px; transition: all 0.2s; font-weight: 500; }
-.playlist-list a:hover { color: var(--primary); background: rgba(110, 69, 226, 0.05); padding-left: 10px; border-radius: 4px; border-bottom-color: transparent;}
-
-/* MODALS */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(5px); }
-.modal-content { background: var(--card-bg); border: none; padding: 25px; border-radius: 20px; max-width: 500px; width: 100%; text-align: left; box-shadow: 0 20px 50px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
-.modal-content h2 { color: var(--primary); margin-top: 0; text-align: center; border-bottom: 2px solid var(--border-light); padding-bottom: 15px;}
-
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-.stat-box { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 2px solid var(--border-light); }
-.stat-val { font-size: 1.5rem; font-weight: 900; color: var(--dark-text); margin-top: 5px; }
-
-.trophy-row { display: flex; align-items: center; background: white; border: 2px solid var(--border-light); padding: 12px; border-radius: 12px; margin-bottom: 10px; transition: all 0.3s; }
-.trophy-icon { font-size: 2rem; margin-right: 15px; filter: grayscale(100%) opacity(0.3); }
-.trophy-text h4 { margin: 0 0 4px 0; color: var(--text-muted); }
-.trophy-text p { margin: 0; font-size: 0.8rem; color: #999; }
-.trophy-row.unlocked { border-color: #f1c40f; background: rgba(241, 196, 15, 0.05); }
-.trophy-row.unlocked .trophy-icon { filter: none; }
-.trophy-row.unlocked .trophy-text h4 { color: #f39c12; }
-.trophy-row.unlocked .trophy-text p { color: var(--dark-text); }
-
-/* MODERN PREMIUM MATTE CARDS (Converted for Light Mode) */
-.game-card {
-    background: white !important; 
-    border: 2px solid var(--border-light) !important; 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    border-radius: 16px !important;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+/* ✅ Correct answer — solid green, toggled by JS via clickedBtn.classList.add('correct') */
+.mc-btn.correct {
+    background-color: var(--success) !important;
+    color: white !important;
+    border-color: var(--success) !important;
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4) !important;
+}
+/* ❌ Wrong answer — solid red, toggled by JS via clickedBtn.classList.add('wrong') */
+.mc-btn.wrong {
+    background-color: var(--fail) !important;
+    color: white !important;
+    border-color: var(--fail) !important;
+    box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4) !important;
 }
 
+
+/* =============================================================================
+   SECTION 9 — FINALE SCREEN  (Playlist Export Box)
+   ─────────────────────────────────────────────────────────────────────────────
+   .playlist-box appears on #final-screen and lets players open the round's
+   songs in Apple Music, Spotify, or YouTube.
+   Hidden (display:none set inline by JS) for non-audio cartridges.
+
+   LAYOUT:
+     .playlist-box          — Container card
+     .platform-toggles      — 3-button row (Apple / Spotify / YouTube)
+     .plat-btn              — Individual platform toggle
+     .active-plat           — Toggled by renderPlaylist() — shows which
+                              platform is currently selected
+     .playlist-list-container — Scrollable area (max 200px); hidden until
+                              a platform button is tapped
+     .playlist-list a       — Individual track link rows with hover state
+   ============================================================================= */
+.playlist-box {
+    background: #fdfdfd;
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: left;
+    margin-top: 20px;
+}
+.playlist-box h4 {
+    margin: 0 0 12px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+/* 3-button row for platform selection */
+.platform-toggles { display: flex; gap: 8px; margin-bottom: 5px; }
+
+.plat-btn {
+    flex: 1;
+    background: white;
+    border: 2px solid var(--border-light);
+    color: var(--text-muted);
+    padding: 10px 5px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+/* Active platform pill — toggled by renderPlaylist() in ui.js */
+.active-plat {
+    background: var(--primary);
+    color: #fff !important;
+    border-color: var(--primary);
+    box-shadow: 0 4px 10px var(--brand-glow);
+}
+
+/* Scrollable track list container — hidden until a platform is chosen */
+.playlist-list-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+    display: none;         /* Shown by renderPlaylist() in ui.js */
+    margin-top: 15px;
+}
+
+/* Track list — links styled as full-width rows */
+.playlist-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 1.8; }
+.playlist-list a {
+    color: var(--dark-text);
+    text-decoration: none;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-light);
+    padding: 10px 5px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+.playlist-list a:hover {
+    color: var(--primary);
+    background: rgba(110, 69, 226, 0.05);
+    padding-left: 10px;       /* Subtle left-slide on hover */
+    border-radius: 4px;
+    border-bottom-color: transparent;
+}
+
+
+/* =============================================================================
+   SECTION 10 — MODALS  (Overlay · Content · Stats Grid · Trophies)
+   ─────────────────────────────────────────────────────────────────────────────
+   .modal-overlay
+     · Fixed full-viewport backdrop using rgba + backdrop-filter:blur.
+     · z-index:1000 ensures it sits above all game screens.
+     · Starts hidden; revealed by showModal() in ui.js.
+
+   .modal-content
+     · The white dialog box centred inside the overlay.
+     · max-height:90vh + overflow-y:auto so long content (trophy list)
+       scrolls without overflowing the screen.
+
+   .stat-grid / .stat-box
+     · 2-column grid for the 4 stat KPIs in the stats modal.
+     · Values are injected by openStatsLocker() in ui.js.
+
+   .trophy-row / .trophy-row.unlocked
+     · Default: icon is greyscale + semi-transparent (locked).
+     · .unlocked class added by openStatsLocker() when the flag is true
+       in localStorage — turns the icon full colour, adds a gold border.
+   ============================================================================= */
+
+/* Full-screen frosted-glass backdrop */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(5px); /* Frosted glass effect behind the dialog */
+}
+
+/* Dialog card */
+.modal-content {
+    background: var(--card-bg);
+    border: none;
+    padding: 25px;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    text-align: left;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;          /* Scroll if trophy list is taller than viewport */
+}
+.modal-content h2 {
+    color: var(--primary);
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: 15px;
+}
+
+/* 2-column KPI grid (Games Played, Accuracy, High Score, Sniper Hits) */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+.stat-box  { background: white; padding: 15px; border-radius: 12px; text-align: center; border: 2px solid var(--border-light); }
+.stat-val  { font-size: 1.5rem; font-weight: 900; color: var(--dark-text); margin-top: 5px; }
+
+/* Trophy row — locked state (default) */
+.trophy-row {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 2px solid var(--border-light);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+}
+/* Greyscale + dim icon when trophy is locked */
+.trophy-icon { font-size: 2rem; margin-right: 15px; filter: grayscale(100%) opacity(0.3); }
+.trophy-text h4 { margin: 0 0 4px 0; color: var(--text-muted); }
+.trophy-text p  { margin: 0; font-size: 0.8rem; color: #999; }
+
+/* Unlocked state — gold border, full-colour icon, amber heading.
+   Toggled by openStatsLocker() when trophy flag is true in localStorage. */
+.trophy-row.unlocked                  { border-color: #f1c40f; background: rgba(241, 196, 15, 0.05); }
+.trophy-row.unlocked .trophy-icon     { filter: none; }
+.trophy-row.unlocked .trophy-text h4  { color: #f39c12; }
+.trophy-row.unlocked .trophy-text p   { color: var(--dark-text); }
+
+
+/* =============================================================================
+   SECTION 11 — GAME-CARD CARTRIDGE TILES  (.game-card)
+   ─────────────────────────────────────────────────────────────────────────────
+   The main menu cards (Song Trivia, Consensus, etc.) use both .select-card
+   (SECTION 6) AND .game-card for enhanced hover/active physics.
+
+   WHY SEPARATE FROM .select-card?
+     .select-card is used in the setup screen for modes and difficulty
+     (where a selected state matters). .game-card is only used on the
+     main menu tiles where you just want a punchy tap animation — no
+     selected state required.
+
+   PHYSICS:
+     :hover   — lifts 4px with a violet shadow (inviting)
+     :active  — pushes down 2px and scales 0.98 (physical press)
+     Both transitions use cubic-bezier(0.25, 0.8, 0.25, 1) — the
+     "ease-out bounce" curve that feels snappy and physical.
+
+   !important is required because .select-card base styles (set by the
+   component, not the theme) would otherwise win the specificity battle.
+
+   The playCartridgeAnimation() function in PHASE 8 of index.html adds
+   class 'cartridge-loading' to trigger an extended press animation
+   before selectGame() fires. Add that CSS here when you're ready:
+
+     .cartridge-loading { transform: scale(0.97) !important; opacity: 0.8; }
+   ============================================================================= */
+.game-card {
+    background: white !important;
+    border: 2px solid var(--border-light) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 16px !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; /* Spring */
+}
 .game-card:hover {
     transform: translateY(-4px) !important;
     box-shadow: 0 10px 25px rgba(110, 69, 226, 0.15) !important;
-    border-color: var(--primary) !important; 
+    border-color: var(--primary) !important;
 }
-
 .game-card:active {
-    transform: translateY(2px) scale(0.98) !important;
+    transform: translateY(2px) scale(0.98) !important; /* Physical press feel */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* CLEAN SCREEN FADES */
-#setup-screen, #play-screen, #final-screen, #main-menu-screen, #client-play-screen, #client-wait-screen {
+/*
+   FUTURE: Cartridge loading animation (see playCartridgeAnimation in index.html)
+   Uncomment when you wire the cards to use that function:
+
+.cartridge-loading {
+    transform: scale(0.97) !important;
+    opacity: 0.8;
+    transition: all 0.15s ease !important;
+}
+*/
+
+
+/* =============================================================================
+   SECTION 12 — SCREEN TRANSITIONS & RESPONSIVE OVERRIDES
+   ─────────────────────────────────────────────────────────────────────────────
+   SCREEN TRANSITIONS:
+     Every primary screen fades and slides in with modernFade.
+     The animation fires once when the .hidden class is removed and the
+     element becomes visible. Duration 0.3s keeps it snappy.
+
+   RESPONSIVE (@media max-width: 768px):
+     Targets phones in portrait mode (the primary play device).
+     Key changes:
+       · Header padding reset to 0 — no extra space on narrow screens.
+       · #info-btn repositioned to right:40px to leave room for #stats-btn.
+       · #main-title increases to 2.2rem + 900 weight for the "big moment"
+         feel on a phone screen.  Gradient text reapplied (media queries
+         don't inherit non-inherited properties like background-clip).
+       · .prompt-text reduced from 2.5rem → 1.4rem so long Consensus /
+         Who Said It questions fit on a single screen without clipping.
+   ============================================================================= */
+
+/* Entrance animation applied to all primary screens when revealed */
+#setup-screen,
+#play-screen,
+#final-screen,
+#main-menu-screen,
+#client-play-screen,
+#client-wait-screen {
     animation: modernFade 0.3s ease-out;
 }
 
 @keyframes modernFade {
-    0% { opacity: 0; transform: translateY(10px); }
+    0%   { opacity: 0; transform: translateY(10px); }
     100% { opacity: 1; transform: translateY(0); }
 }
 
+
+/* ── RESPONSIVE — Mobile Portrait (≤768px) ──────────────────────────────── */
 @media (max-width: 768px) {
-    #game-header { padding: 0; justify-content: center; align-items: center; }
+
+    /* Tighten header — no padding needed on narrow viewport */
+    #game-header {
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Re-anchor info button so it clears the stats button on the right */
     #info-btn { right: 40px; }
-    
-    /* This makes the Solo/Host title huge and colorful on phones! */
-    #main-title { 
-        font-size: 2.2rem; /* Massive size for solo mobile! */
+
+    /* Large cinematic title for the phone primary player experience.
+       Note: gradient text properties (background-clip, text-fill-color)
+       are not inherited so they must be re-declared inside the media query. */
+    #main-title {
+        font-size: 2.2rem;
         font-weight: 900;
         letter-spacing: 3px;
-        padding: 0 75px 0 45px; 
-        text-align: center; 
+        padding: 0 75px 0 45px;
+        text-align: center;
         background: linear-gradient(135deg, var(--primary), #8e2de2);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
-    /* Your custom fix to make long questions fit on the screen */
+    /* Shrink large prompts so multi-word Consensus / Who Said It questions
+       fit on phone screens without overflowing or requiring scroll. */
     .prompt-text {
-        font-size: 1.4rem; 
+        font-size: 1.4rem;
         margin-bottom: 15px;
     }
 }
