@@ -121,7 +121,7 @@ export const manifest = {
     `,
 
     modes: [
-        { id: "media",        title: "🎬 Media",        desc: "Movie posters and iconic album covers." },
+        { id: "movies",       title: "🎬 Movies",       desc: "Iconic theatrical movie posters." }, // 👈 CHANGED
         { id: "megastars",    title: "🌟 Megastars",    desc: "Actors, athletes, and pop culture icons." },
         { id: "masterpieces", title: "🎨 Masterpieces", desc: "Famous art and historical photography." }
     ],
@@ -148,7 +148,6 @@ export const manifest = {
  * @param {string} mode — One of: "media" | "megastars" | "masterpieces"
  */
 export function onModeSelect(mode) {
-    // Default to Party Pack whenever a new mode is picked
     state.gameState.sub = 'party_pack';
 
     const subLabel = document.getElementById('sub-label');
@@ -157,7 +156,6 @@ export function onModeSelect(mode) {
     const container = document.getElementById('sub-pills');
     if (container) {
         container.innerHTML = '';
-
         const pillParty = document.createElement('div');
         pillParty.className = 'pill pill-wide active';
         pillParty.innerText = "📦 Party Pack";
@@ -172,9 +170,35 @@ export function onModeSelect(mode) {
         container.appendChild(pillAI);
     }
 
-    // Always hide custom input when mode changes (onSubSelect will re-show if needed)
     const customInput = document.getElementById('custom-input');
     if (customInput) customInput.classList.add('hidden');
+
+    // ── NEW: Inject TMDB Key Input ──
+    let tmdbInput = document.getElementById('tmdb-input');
+    if (!tmdbInput) {
+        tmdbInput = document.createElement('input');
+        tmdbInput.id = 'tmdb-input';
+        tmdbInput.className = 'custom-input hidden';
+        tmdbInput.style.marginTop = '10px';
+        tmdbInput.style.width = '100%';
+        tmdbInput.style.padding = '15px';
+        tmdbInput.style.borderRadius = '12px';
+        tmdbInput.style.border = '2px solid var(--border-light)';
+        
+        if (customInput && customInput.parentNode) {
+            customInput.parentNode.insertBefore(tmdbInput, customInput.nextSibling);
+        }
+    }
+
+    if (mode === 'movies') {
+        tmdbInput.placeholder = "Paste TMDB API Key (Required for Posters)";
+        tmdbInput.type = "password";
+        tmdbInput.classList.remove('hidden');
+        const savedTMDB = localStorage.getItem('yardbird_tmdb_key');
+        if (savedTMDB) tmdbInput.value = savedTMDB;
+    } else {
+        if (tmdbInput) tmdbInput.classList.add('hidden');
+    }
 
     const subArea = document.getElementById('sub-selection-area');
     if (subArea) subArea.classList.remove('hidden');
@@ -467,6 +491,17 @@ export async function startGame() {
     // ── 5. Show initial loading state in the feedback area ──
     _setFeedback(`<div class="reveal-loading-msg">Initializing system...</div>`);
 
+    // ── NEW: Secure the TMDB Key if Movies mode is selected ──
+    if (state.gameState.mode === 'movies') {
+        const tmdbKey = document.getElementById('tmdb-input')?.value.trim();
+        if (!tmdbKey) {
+            alert("A TMDB API Key is required to play the Movies mode. Please paste it in the setup screen.");
+            location.reload();
+            return;
+        }
+        localStorage.setItem('yardbird_tmdb_key', tmdbKey);
+    }
+
     // ── 6. Data routing: Party Pack (local JSON) vs. Infinite AI (OpenAI) ──
     if (state.gameState.sub === 'ai_infinite') {
         const apiKey = (document.getElementById('custom-input')?.value || '').trim();
@@ -535,8 +570,17 @@ async function _nextRound() {
     document.getElementById('mc-fields').classList.add('hidden');
     document.getElementById('score-board').innerHTML = _buildScoreBoard();
 
+    // ── NEW: Route image fetching to TMDB or Wikipedia ──
+    let imageUrl = null;
+    if (state.gameState.mode === 'movies') {
+        const tmdbKey = localStorage.getItem('yardbird_tmdb_key');
+        imageUrl = await _fetchTMDBImage(revealState.currentData.imageKeyword, tmdbKey);
+    } else {
+        imageUrl = await _fetchWikipediaImage(revealState.currentData.imageKeyword);
+    }
+
     // ── Fetch image from Wikipedia ──
-    const imageUrl = await _fetchWikipediaImage(revealState.currentData.imageKeyword);
+    // - const imageUrl = await _fetchWikipediaImage(revealState.currentData.imageKeyword);
 
     if (!imageUrl) {
         // Wikipedia returned nothing — skip this subject
@@ -832,14 +876,14 @@ async function _fetchInfiniteAIData(apiKey) {
 
     // Category labels for the AI prompt
     const catLabels = {
-        media:        "Famous Movie Posters and Iconic Album Covers",
+        movies:       "Famous Theatrical Movies",
         megastars:    "A-List Actors, Historical Figures, Pop Icons, and Star Athletes",
         masterpieces: "The most famous Paintings and Sculptures in history"
     };
 
     // Randomized sub-themes force variety across sessions
     const seedThemes = {
-        media:        ["1980s cult classics","sci-fi and fantasy","Oscar winners","Billboard Top 100 albums from the 90s","iconic hip-hop albums","animated masterpieces"],
+        movies:       ["1980s cult classics", "sci-fi and fantasy", "Oscar winners", "90s blockbusters", "animated masterpieces", "horror legends"], // 👈 CHANGED
         megastars:    ["historical leaders","2000s pop stars","legendary athletes","famous directors","classical composers","reality TV icons"],
         masterpieces: ["Renaissance art","modern sculptures","impressionist paintings","famous 20th-century photographs","surrealism","street art"]
     };
@@ -938,6 +982,28 @@ async function _fetchWikipediaImage(pageTitle) {
         return null;
     } catch (err) {
         console.warn(`[TheReveal] Wikipedia fetch failed for "${pageTitle}":`, err);
+        return null;
+    }
+}
+
+/**
+ * _fetchTMDBImage(movieTitle, apiKey)
+ * ────────────────────────────────────
+ * Queries The Movie Database (TMDB) for high-resolution theatrical posters.
+ */
+async function _fetchTMDBImage(movieTitle, apiKey) {
+    const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(movieTitle)}&api_key=${apiKey}&language=en-US&page=1&include_adult=false`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.results && data.results.length > 0 && data.results[0].poster_path) {
+            // w780 provides a crisp image that looks great even when scaled up
+            return `https://image.tmdb.org/t/p/w780${data.results[0].poster_path}`;
+        }
+        return null;
+    } catch (err) {
+        console.error("[TheReveal] TMDB fetch failed:", err);
         return null;
     }
 }
@@ -1466,7 +1532,7 @@ function _shuffleArray(array) {
  * so client phones see a descriptive hint rather than a raw mode ID.
  */
 const CATEGORIES = {
-    media:        "🎬 Movies & Albums",
+    movies:       "🎬 Movies",
     megastars:    "🌟 Megastars",
     masterpieces: "🎨 Masterpieces"
 };
