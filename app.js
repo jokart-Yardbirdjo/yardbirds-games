@@ -31,6 +31,7 @@ import * as SongTrivia from './gameLogic.js';
 import * as FastMath from './mathLogic.js';
 import * as Consensus from './consensusLogic.js';
 import * as QuoteTrivia from './quoteLogic.js';
+import * as TheReveal from './revealLogic.js';
 
 // Default the system to Song Trivia on load to prevent null references
 window.activeCartridge = SongTrivia; 
@@ -98,6 +99,7 @@ window.loadCartridge = (gameId) => {
     if (gameId === 'fast_math') targetCartridge = FastMath;
     else if (gameId === 'consensus') targetCartridge = Consensus;
     else if (gameId === 'who_said_it') targetCartridge = QuoteTrivia;
+    else if (gameId === 'the_reveal') targetCartridge = TheReveal;
     else targetCartridge = SongTrivia;
     
     // Strict Validation: Will throw an error if the cartridge is incomplete
