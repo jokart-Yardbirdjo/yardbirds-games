@@ -40,6 +40,10 @@ export const manifest = {
         { id: "media", title: "🎬 Media", desc: "Movie posters and iconic album covers." },
         { id: "megastars", title: "🌟 Megastars", desc: "Actors, athletes, and pop culture icons." },
         { id: "masterpieces", title: "🎨 Masterpieces", desc: "Famous art and historical photography." }
+    ],
+    // ADD THIS ARRAY BACK IN:
+    levels: [
+        { id: "standard", title: "🟢 Standard", desc: "30s global unblur. Speed is points." }
     ]
 };
 
