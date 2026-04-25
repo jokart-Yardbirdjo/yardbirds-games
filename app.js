@@ -157,7 +157,7 @@ window.startDailyChallenge = () => window.activeCartridge.startDailyChallenge();
 window.startGame = () => window.activeCartridge.startGame();
 window.handleStop = () => window.activeCartridge.handleStop();
 window.forceLifeline = () => window.activeCartridge.forceLifeline();
-window.evaluateGuess = (isCorrect) => window.activeCartridge.evaluateGuess(isCorrect);
+window.evaluateGuess = (isCorrect, clickedBtn) => window.activeCartridge.evaluateGuess(isCorrect, clickedBtn);
 window.resetStats = () => window.activeCartridge.resetStats();
 window.shareChallenge = () => window.activeCartridge.shareChallenge();
 window.evaluateMultiplayerRound = (players) => window.activeCartridge.evaluateMultiplayerRound(players);
