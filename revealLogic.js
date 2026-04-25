@@ -2,14 +2,14 @@
  * ==============================================================================
  * YARDBIRD'S GAMES - CARTRIDGE: THE REVEAL (revealLogic.js)
  * ==============================================================================
- * Role: Handles the visual pattern-recognition game.
+ * Role: Handles the visual pattern-recognition game using the 12-Second Grid.
  * Architecture: Local JSON Database + Wikipedia Action API for keyless images.
  * * PHASES:
  * 1. Manifest & Config   (Setup screen data & System Stubs)
- * 2. Local State         (Cartridge-specific variables)
+ * 2. Local State         (Cartridge variables & Dynamic CSS)
  * 3. Core Game Loop      (Start, Round Management, End)
  * 4. Data & Network      (JSON loading, Wikipedia fetching)
- * 5. Mechanics & UI      (Timer, Exponential Unblur, Score Evaluation)
+ * 5. Mechanics & UI      (12s Grid Timer, Score Evaluation)
  * 6. Stats & Sharing     (Locker Room UI, Persistence)
  * ==============================================================================
  */
@@ -29,10 +29,9 @@ export const manifest = {
     rulesHTML: `
         <h2>How to Play</h2>
         <div style="text-align:left; color:var(--dark-text); line-height:1.7; font-size:0.95rem;">
-            <p>An image will appear completely <strong>blurred out</strong>.</p>
-            <p>Over exactly 30 seconds, the image will exponentially come into focus.</p>
-            <p>Tap the correct multiple-choice button as fast as you can. 
-               <strong style="color:var(--primary);">The blurrier the image when you guess, the more points you lock in.</strong></p>
+            <p>An image will appear completely hidden behind a 12-block grid.</p>
+            <p><strong>Every second, one block vanishes.</strong> You have exactly 12 seconds to figure it out.</p>
+            <p>Tap the correct answer as fast as you can. <strong style="color:var(--primary);">The fewer blocks revealed, the more points you lock in.</strong></p>
             <p>🔥 Get 3 correct in a row for a +50 Streak Bonus!</p>
         </div>
         <button class="btn btn-main" onclick="hideModal('rules-modal')" style="margin-top:15px; width:100%;">Let's Go!</button>
@@ -43,11 +42,11 @@ export const manifest = {
         { id: "masterpieces", title: "🎨 Masterpieces", desc: "Famous art and historical photography." }
     ],
     levels: [
-        { id: "standard", title: "🟢 Standard", desc: "30s global unblur. Speed is points." }
+        { id: "standard", title: "🟢 The Grid", desc: "12 seconds. One block vanishes every second." }
     ]
 };
 
-// System Contract Stubs (Required by app.js)
+// System Contract Stubs (Required by app.js to prevent crashes)
 export function handleStop() { return; }
 export function forceLifeline() { return; }
 export function startDailyChallenge() { alert("Daily mode coming soon!"); }
@@ -59,14 +58,14 @@ export function startDailyChallenge() { alert("Daily mode coming soon!"); }
 
 const revealState = {
     localDB: null,
-    queue: [],             // Shuffled deck of prompts to prevent repeats
+    queue: [],             // Shuffled deck of prompts to guarantee NO repeats
     currentData: null,     // The active { imageKeyword, answer, wrong } object
-    timerInterval: null,
-    maxTime: 30.0,
+    maxTime: 12.0,         // Locked to 12 seconds
+    blocksRemaining: [],   // Tracks which grid blocks haven't vanished yet
     currentScorePotential: 0
 };
 
-// Hardware-accelerated CSS specifically for the blur mechanic
+// Hardware-accelerated CSS for the Grid Mechanic
 const style = document.createElement('style');
 style.innerHTML = `
     .reveal-image-container {
@@ -74,18 +73,33 @@ style.innerHTML = `
         max-width: 350px;
         height: 350px;
         margin: 0 auto 20px auto;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        background: #121212;
+        border-radius: 12px;
         position: relative;
+        background: #121212;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        overflow: hidden;
     }
     .reveal-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        will-change: filter;
-        transform: translateZ(0); 
+    }
+    .grid-overlay {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 2px; /* Slight gap makes it look like physical tiles */
+    }
+    .grid-block {
+        background: #121212; /* Deep matte black */
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .grid-block.hidden {
+        opacity: 0;
+        transform: scale(0.8); /* Slight shrink effect as it vanishes */
     }
 `;
 document.head.appendChild(style);
@@ -98,7 +112,7 @@ document.head.appendChild(style);
 export async function startGame() {
     // 1. Clean Global State
     state.curIdx = 0;
-    state.numPlayers = 1; // Default to solo for now
+    state.numPlayers = 1; 
     state.maxRounds = state.gameState.rounds;
     state.rawScores = [0];
     state.streaks = [0];
@@ -120,7 +134,7 @@ export async function startGame() {
     document.getElementById('visualizer').classList.add('hidden');
     document.getElementById('reveal-art').style.display = 'none';
     
-    document.getElementById('feedback').innerHTML = `<div style="color:var(--primary); font-size:1.5rem; margin-top:40px;">Initializing Image Engine...</div>`;
+    document.getElementById('feedback').innerHTML = `<div style="color:var(--primary); font-size:1.5rem; margin-top:40px;">Initializing Grid Engine...</div>`;
 
     // 4. Load Database and Build Queue
     await loadLocalDatabase();
@@ -140,7 +154,7 @@ async function nextRound() {
     if (state.curIdx >= state.maxRounds) { endGameSequence(); return; }
     state.isProcessing = false;
 
-    // 1. Pop from queue
+    // 1. Pop from queue (Ensures absolutely NO repeating clues)
     revealState.currentData = revealState.queue.pop();
     if (!revealState.currentData) {
         console.warn("Out of database prompts! Ending game early.");
@@ -148,12 +162,11 @@ async function nextRound() {
     }
 
     // 2. Fetch & Preload Image
-    document.getElementById('feedback').innerHTML = `<div style="color:var(--text-muted); font-size:1.2rem; margin-top:40px; animation: pulse 1.5s infinite;">Securely fetching image...</div>`;
+    document.getElementById('feedback').innerHTML = `<div style="color:var(--text-muted); font-size:1.2rem; margin-top:40px; animation: pulse 1.5s infinite;">Searching Wikipedia...</div>`;
     const imageUrl = await fetchWikipediaImage(revealState.currentData.imageKeyword);
     
     if (!imageUrl) {
         console.error("Wikipedia returned no image. Skipping round.");
-        state.curIdx++;
         return nextRound();
     }
     
@@ -162,7 +175,7 @@ async function nextRound() {
 
     // 3. Build Gameplay UI
     renderGameplayUI(imageUrl);
-    startBlurTimer();
+    startGridTimer();
 }
 
 // ==========================================
@@ -228,10 +241,15 @@ function renderGameplayUI(imageUrl) {
     revealState.currentData.wrong.forEach(w => options.push({ str: w, isCorrect: false }));
     options = options.sort(() => 0.5 - Math.random());
 
-    // Inject Image and Buttons into Feedback Div
+    // Inject Image and 12-Block Grid Overlay
+    let gridHTML = Array.from({length: 12}).map((_, i) => `<div class="grid-block" id="block-${i}"></div>`).join('');
+    
     document.getElementById('feedback').innerHTML = `
         <div class="reveal-image-container">
-            <img id="reveal-active-image" class="reveal-image" src="${imageUrl}" style="filter: blur(40px);">
+            <img id="reveal-active-image" class="reveal-image" src="${imageUrl}">
+            <div class="grid-overlay">
+                ${gridHTML}
+            </div>
         </div>
     `;
 
@@ -249,9 +267,12 @@ function renderGameplayUI(imageUrl) {
     });
 }
 
-function startBlurTimer() {
-    state.timeLeft = revealState.maxTime;
-    const imgEl = document.getElementById('reveal-active-image');
+function startGridTimer() {
+    state.timeLeft = revealState.maxTime; // 12.0
+    
+    // Create an array of 0-11 and shuffle it so blocks vanish randomly
+    revealState.blocksRemaining = [0,1,2,3,4,5,6,7,8,9,10,11].sort(() => 0.5 - Math.random());
+    let lastSecond = 12;
     
     // Platform standard timer bar
     const timerElement = document.getElementById('timer');
@@ -260,35 +281,37 @@ function startBlurTimer() {
 
     state.timerId = setInterval(() => {
         state.timeLeft -= 0.1;
-        if (state.timeLeft <= 0) state.timeLeft = 0;
+        if (state.timeLeft < 0) state.timeLeft = 0;
 
-        // UI Updates
+        // Smooth UI Bar Update
         if (timerFill) {
             timerFill.style.width = `${(state.timeLeft / revealState.maxTime) * 100}%`;
             if (state.timeLeft <= 3) timerFill.style.backgroundColor = 'var(--fail)';
         }
 
-        // OPTION A: The Exponential Blur
-        // Drops rapidly at the start, then slowly refines.
-        const timeRatio = state.timeLeft / revealState.maxTime;
-        const blurAmount = Math.pow(timeRatio, 3) * 40; 
-        
-        // Linear Score Potential (Max 1000)
-        revealState.currentScorePotential = Math.floor(timeRatio * 1000);
+        // Score Potential scales evenly from 1000 down to 0
+        revealState.currentScorePotential = Math.floor((state.timeLeft / revealState.maxTime) * 1000);
 
-        if (imgEl) imgEl.style.filter = `blur(${blurAmount}px)`;
+        // GRID REVEAL LOGIC: Pop one block every time a full second drops
+        const currentSecond = Math.ceil(state.timeLeft); 
+        if (currentSecond < lastSecond && revealState.blocksRemaining.length > 0) {
+            lastSecond = currentSecond;
+            const blockId = revealState.blocksRemaining.pop();
+            const blockEl = document.getElementById(`block-${blockId}`);
+            if (blockEl) blockEl.classList.add('hidden');
+        }
 
-        // Sound effect on last 3 ticks
+        // Sound effect on last 3 seconds
         if (Math.abs(state.timeLeft - Math.round(state.timeLeft)) < 0.05 && state.timeLeft <= 3 && state.timeLeft > 0) {
             sfxTick.play().catch(()=>{});
         }
 
-        // Timeout
+        // Timeout (Loss)
         if (state.timeLeft <= 0) {
             clearInterval(state.timerId);
             window.evaluateGuess(false, null);
         }
-    }, 100); // 10 ticks a second for buttery smooth CSS updates
+    }, 100); 
 }
 
 export function evaluateGuess(isCorrect, clickedBtn = null) {
@@ -300,9 +323,8 @@ export function evaluateGuess(isCorrect, clickedBtn = null) {
     document.querySelectorAll('.mc-btn').forEach(b => b.disabled = true);
     if (clickedBtn && !isCorrect) clickedBtn.classList.add('wrong');
     
-    // Snap blur to zero instantly to reveal the image
-    const imgEl = document.getElementById('reveal-active-image');
-    if (imgEl) imgEl.style.filter = `blur(0px)`;
+    // Instantly remove all remaining blocks to reveal the image
+    document.querySelectorAll('.grid-block').forEach(b => b.classList.add('hidden'));
 
     // Highlight the correct answer to train the user
     document.querySelectorAll('#mc-fields .mc-btn').forEach(btn => {
@@ -386,7 +408,7 @@ function endGameSequence() {
     state.userStats.platformGamesPlayed++;
     localStorage.setItem('yardbirdPlatformStats', JSON.stringify(state.userStats));
 
-    // Solo End Card
+    // Fix: Proper Solo End Card Injection!
     const hypeText = maxScore > (state.maxRounds * 600) ? "Eagle Eye! 🦅" : (maxScore > (state.maxRounds * 300) ? "Solid Vision! 👁️" : "Needs Glasses! 👓");
     
     document.getElementById('winner-text').innerHTML = `
@@ -405,6 +427,7 @@ function endGameSequence() {
 }
 
 export function renderStatsUI(revealStats, container) {
+    // Fix: Completely overwrites the modal content so it doesn't look like Song Trivia
     container.innerHTML = `
         <h2 style="color:var(--primary); margin-top:0; text-align:center; border-bottom:2px solid var(--border-light); padding-bottom:15px;">The Reveal Locker</h2>
         <div class="stat-grid">
