@@ -846,43 +846,6 @@ body.client-mode #main-title        {
     object-fit: cover;
 }
 
-/* ── L) THE REVEAL CARTRIDGE COMPONENTS ──────────────────────────────────── */
-/* Hardware-accelerated image container and 12-block unblur grid */
-.reveal-image-container {
-    width: 100%;
-    max-width: 350px;
-    height: 350px;
-    margin: 0 auto 20px auto;
-    border-radius: 12px;
-    position: relative;
-    background: #121212;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    overflow: hidden;
-}
-.reveal-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.grid-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 2px;
-}
-.grid-block {
-    background: #121212; 
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.grid-block.hidden {
-    opacity: 0;
-    transform: scale(0.8);
-}
-
-
 /* =============================================================================
    SECTION 8 — MULTIPLE CHOICE BUTTONS  (.mc-btn)
    ─────────────────────────────────────────────────────────────────────────────
