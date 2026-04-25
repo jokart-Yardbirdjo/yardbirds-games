@@ -1,83 +1,68 @@
 {
   "media": [
-    {
-      "imageKeyword": "The Dark Knight (film)",
-      "answer": "The Dark Knight",
-      "wrong": ["Batman Begins", "The Avengers", "Inception"]
-    },
-    {
-      "imageKeyword": "Abbey Road",
-      "answer": "Abbey Road (The Beatles)",
-      "wrong": ["Sgt. Pepper's Lonely Hearts Club Band", "Let It Be", "Pet Sounds"]
-    },
-    {
-      "imageKeyword": "Jaws (film)",
-      "answer": "Jaws",
-      "wrong": ["Jurassic Park", "Alien", "The Meg"]
-    },
-    {
-      "imageKeyword": "Thriller (album)",
-      "answer": "Thriller (Michael Jackson)",
-      "wrong": ["Bad", "Off the Wall", "Purple Rain"]
-    },
-    {
-      "imageKeyword": "Star Wars (film)",
-      "answer": "Star Wars: A New Hope",
-      "wrong": ["The Empire Strikes Back", "Star Trek", "Dune"]
-    }
+    { "imageKeyword": "The Dark Knight (film)", "answer": "The Dark Knight", "wrong": ["Batman Begins", "The Avengers", "Inception"] },
+    { "imageKeyword": "Abbey Road", "answer": "Abbey Road (The Beatles)", "wrong": ["Sgt. Pepper's", "Let It Be", "Pet Sounds"] },
+    { "imageKeyword": "Jaws (film)", "answer": "Jaws", "wrong": ["Jurassic Park", "Alien", "The Meg"] },
+    { "imageKeyword": "Thriller (album)", "answer": "Thriller (Michael Jackson)", "wrong": ["Bad", "Off the Wall", "Purple Rain"] },
+    { "imageKeyword": "Star Wars (film)", "answer": "Star Wars: A New Hope", "wrong": ["The Empire Strikes Back", "Star Trek", "Dune"] },
+    { "imageKeyword": "The Matrix (franchise)", "answer": "The Matrix", "wrong": ["Blade Runner", "Inception", "Terminator 2"] },
+    { "imageKeyword": "Nevermind", "answer": "Nevermind (Nirvana)", "wrong": ["Ten (Pearl Jam)", "Dookie", "In Utero"] },
+    { "imageKeyword": "Jurassic Park (film)", "answer": "Jurassic Park", "wrong": ["King Kong", "Godzilla", "Indiana Jones"] },
+    { "imageKeyword": "Back to the Future", "answer": "Back to the Future", "wrong": ["Ghostbusters", "E.T.", "The Goonies"] },
+    { "imageKeyword": "Rumours (album)", "answer": "Rumours (Fleetwood Mac)", "wrong": ["Hotel California", "Tusk", "Dark Side of the Moon"] },
+    { "imageKeyword": "Titanic (1997 film)", "answer": "Titanic", "wrong": ["The Notebook", "Romeo + Juliet", "Avatar"] },
+    { "imageKeyword": "The Lion King (1994 film)", "answer": "The Lion King", "wrong": ["Aladdin", "Beauty and the Beast", "Tarzan"] },
+    { "imageKeyword": "Sgt. Pepper's Lonely Hearts Club Band", "answer": "Sgt. Pepper's (The Beatles)", "wrong": ["Abbey Road", "The White Album", "Magical Mystery Tour"] },
+    { "imageKeyword": "Avatar (2009 film)", "answer": "Avatar", "wrong": ["Interstellar", "Transformers", "Avengers: Endgame"] },
+    { "imageKeyword": "The Godfather", "answer": "The Godfather", "wrong": ["Goodfellas", "Scarface", "Casino"] },
+    { "imageKeyword": "The Dark Side of the Moon", "answer": "Dark Side of the Moon (Pink Floyd)", "wrong": ["The Wall", "Led Zeppelin IV", "Sticky Fingers"] },
+    { "imageKeyword": "Terminator 2: Judgment Day", "answer": "Terminator 2", "wrong": ["The Terminator", "RoboCop", "Aliens"] },
+    { "imageKeyword": "Pulp Fiction", "answer": "Pulp Fiction", "wrong": ["Reservoir Dogs", "Fight Club", "The Big Lebowski"] },
+    { "imageKeyword": "Born in the U.S.A.", "answer": "Born in the U.S.A. (Bruce Springsteen)", "wrong": ["Darkness on the Edge of Town", "Born to Run", "The River"] },
+    { "imageKeyword": "E.T. the Extra-Terrestrial", "answer": "E.T.", "wrong": ["Close Encounters", "Alien", "The Goonies"] }
   ],
   "megastars": [
-    {
-      "imageKeyword": "Michael Jordan",
-      "answer": "Michael Jordan",
-      "wrong": ["LeBron James", "Kobe Bryant", "Magic Johnson"]
-    },
-    {
-      "imageKeyword": "Marilyn Monroe",
-      "answer": "Marilyn Monroe",
-      "wrong": ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"]
-    },
-    {
-      "imageKeyword": "Freddie Mercury",
-      "answer": "Freddie Mercury",
-      "wrong": ["David Bowie", "Mick Jagger", "Elton John"]
-    },
-    {
-      "imageKeyword": "Serena Williams",
-      "answer": "Serena Williams",
-      "wrong": ["Venus Williams", "Maria Sharapova", "Naomi Osaka"]
-    },
-    {
-      "imageKeyword": "Albert Einstein",
-      "answer": "Albert Einstein",
-      "wrong": ["Isaac Newton", "Nikola Tesla", "Thomas Edison"]
-    }
+    { "imageKeyword": "Michael Jordan", "answer": "Michael Jordan", "wrong": ["LeBron James", "Kobe Bryant", "Magic Johnson"] },
+    { "imageKeyword": "Marilyn Monroe", "answer": "Marilyn Monroe", "wrong": ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"] },
+    { "imageKeyword": "Freddie Mercury", "answer": "Freddie Mercury", "wrong": ["David Bowie", "Mick Jagger", "Elton John"] },
+    { "imageKeyword": "Serena Williams", "answer": "Serena Williams", "wrong": ["Venus Williams", "Maria Sharapova", "Naomi Osaka"] },
+    { "imageKeyword": "Albert Einstein", "answer": "Albert Einstein", "wrong": ["Isaac Newton", "Nikola Tesla", "Thomas Edison"] },
+    { "imageKeyword": "Muhammad Ali", "answer": "Muhammad Ali", "wrong": ["Mike Tyson", "Joe Frazier", "Floyd Mayweather"] },
+    { "imageKeyword": "Madonna", "answer": "Madonna", "wrong": ["Cher", "Cindy Lauper", "Lady Gaga"] },
+    { "imageKeyword": "Elvis Presley", "answer": "Elvis Presley", "wrong": ["Johnny Cash", "Buddy Holly", "Frank Sinatra"] },
+    { "imageKeyword": "Tom Cruise", "answer": "Tom Cruise", "wrong": ["Brad Pitt", "George Clooney", "Keanu Reeves"] },
+    { "imageKeyword": "Beyoncé", "answer": "Beyoncé", "wrong": ["Rihanna", "Alicia Keys", "Mariah Carey"] },
+    { "imageKeyword": "Cristiano Ronaldo", "answer": "Cristiano Ronaldo", "wrong": ["Lionel Messi", "David Beckham", "Neymar"] },
+    { "imageKeyword": "Taylor Swift", "answer": "Taylor Swift", "wrong": ["Katy Perry", "Selena Gomez", "Ariana Grande"] },
+    { "imageKeyword": "Will Smith", "answer": "Will Smith", "wrong": ["Denzel Washington", "Eddie Murphy", "Martin Lawrence"] },
+    { "imageKeyword": "Leonardo DiCaprio", "answer": "Leonardo DiCaprio", "wrong": ["Matt Damon", "Johnny Depp", "Christian Bale"] },
+    { "imageKeyword": "Abraham Lincoln", "answer": "Abraham Lincoln", "wrong": ["George Washington", "Thomas Jefferson", "Theodore Roosevelt"] },
+    { "imageKeyword": "Oprah Winfrey", "answer": "Oprah Winfrey", "wrong": ["Whoopi Goldberg", "Tyra Banks", "Ellen DeGeneres"] },
+    { "imageKeyword": "Lady Gaga", "answer": "Lady Gaga", "wrong": ["Miley Cyrus", "Katy Perry", "Gwen Stefani"] },
+    { "imageKeyword": "Dwayne Johnson", "answer": "The Rock (Dwayne Johnson)", "wrong": ["John Cena", "Vin Diesel", "Jason Statham"] },
+    { "imageKeyword": "Bruce Lee", "answer": "Bruce Lee", "wrong": ["Jackie Chan", "Jet Li", "Donnie Yen"] },
+    { "imageKeyword": "David Bowie", "answer": "David Bowie", "wrong": ["Prince", "Mick Jagger", "Elton John"] }
   ],
   "masterpieces": [
-    {
-      "imageKeyword": "Mona Lisa",
-      "answer": "Mona Lisa",
-      "wrong": ["Girl with a Pearl Earring", "The Birth of Venus", "Lady with an Ermine"]
-    },
-    {
-      "imageKeyword": "The Starry Night",
-      "answer": "The Starry Night",
-      "wrong": ["Sunflowers", "Café Terrace at Night", "The Scream"]
-    },
-    {
-      "imageKeyword": "The Scream",
-      "answer": "The Scream",
-      "wrong": ["The Starry Night", "Guernica", "The Persistence of Memory"]
-    },
-    {
-      "imageKeyword": "American Gothic",
-      "answer": "American Gothic",
-      "wrong": ["Nighthawks", "Whistler's Mother", "The Son of Man"]
-    },
-    {
-      "imageKeyword": "The Persistence of Memory",
-      "answer": "The Persistence of Memory",
-      "wrong": ["The Elephants", "The Son of Man", "Guernica"]
-    }
+    { "imageKeyword": "Mona Lisa", "answer": "Mona Lisa", "wrong": ["Girl with a Pearl Earring", "The Birth of Venus", "Lady with an Ermine"] },
+    { "imageKeyword": "The Starry Night", "answer": "The Starry Night", "wrong": ["Sunflowers", "Café Terrace at Night", "The Scream"] },
+    { "imageKeyword": "The Scream", "answer": "The Scream", "wrong": ["The Starry Night", "Guernica", "The Persistence of Memory"] },
+    { "imageKeyword": "American Gothic", "answer": "American Gothic", "wrong": ["Nighthawks", "Whistler's Mother", "The Son of Man"] },
+    { "imageKeyword": "The Persistence of Memory", "answer": "The Persistence of Memory", "wrong": ["The Elephants", "The Son of Man", "Guernica"] },
+    { "imageKeyword": "Girl with a Pearl Earring", "answer": "Girl with a Pearl Earring", "wrong": ["Mona Lisa", "The Milkmaid", "Portrait of a Lady"] },
+    { "imageKeyword": "The Kiss (Klimt)", "answer": "The Kiss", "wrong": ["The Lovers", "Dance at Le moulin de la Galette", "Starry Night"] },
+    { "imageKeyword": "The Birth of Venus", "answer": "The Birth of Venus", "wrong": ["Primavera", "The Creation of Adam", "Mona Lisa"] },
+    { "imageKeyword": "Guernica (Picasso)", "answer": "Guernica", "wrong": ["The Weeping Woman", "The Old Guitarist", "Les Demoiselles d'Avignon"] },
+    { "imageKeyword": "The Last Supper (Leonardo)", "answer": "The Last Supper", "wrong": ["The Creation of Adam", "School of Athens", "The Wedding at Cana"] },
+    { "imageKeyword": "A Sunday Afternoon on the Island of La Grande Jatte", "answer": "A Sunday Afternoon", "wrong": ["Water Lilies", "The Boating Party", "Starry Night Over the Rhône"] },
+    { "imageKeyword": "Whistler's Mother", "answer": "Whistler's Mother", "wrong": ["American Gothic", "Portrait of Madame X", "Woman with a Parasol"] },
+    { "imageKeyword": "The Night Watch", "answer": "The Night Watch", "wrong": ["The Anatomy Lesson", "Girl with a Pearl Earring", "The Last Supper"] },
+    { "imageKeyword": "The Creation of Adam", "answer": "The Creation of Adam", "wrong": ["The Last Judgment", "The School of Athens", "The Last Supper"] },
+    { "imageKeyword": "Nighthawks (painting)", "answer": "Nighthawks", "wrong": ["American Gothic", "Automat", "Boulevard of Broken Dreams"] },
+    { "imageKeyword": "The Great Wave off Kanagawa", "answer": "The Great Wave", "wrong": ["Red Fuji", "Fine Wind, Clear Morning", "The Dream of the Fisherman's Wife"] },
+    { "imageKeyword": "David (Michelangelo)", "answer": "David (Sculpture)", "wrong": ["The Thinker", "Venus de Milo", "Pieta"] },
+    { "imageKeyword": "Liberty Leading the People", "answer": "Liberty Leading the People", "wrong": ["The Raft of the Medusa", "Wanderer above the Sea of Fog", "The Third of May 1808"] },
+    { "imageKeyword": "Wanderer above the Sea of Fog", "answer": "Wanderer above the Sea of Fog", "wrong": ["The Monk by the Sea", "The Hay Wain", "Liberty Leading the People"] },
+    { "imageKeyword": "The Son of Man", "answer": "The Son of Man", "wrong": ["The Treachery of Images", "Golconda", "The Persistence of Memory"] }
   ]
-} 
+}
