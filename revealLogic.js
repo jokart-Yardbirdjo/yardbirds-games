@@ -250,7 +250,7 @@ const revealState = {
     skipCount: 0,
 
     /** @type {number} Max skips before endGameSequence fires early */
-    MAX_SKIPS: 3
+    MAX_SKIPS: 10
 };
 
 /**
@@ -847,7 +847,7 @@ async function _fetchInfiniteAIData(apiKey) {
         Math.floor(Math.random() * seedThemes[state.gameState.mode].length)
     ] || "popular culture";
 
-    const systemPrompt = `Generate a JSON array of ${state.maxRounds + 3} trivia items for a visual guessing game.
+    const systemPrompt = `Generate a JSON array of ${state.maxRounds + 8} trivia items for a visual guessing game.
 Category: ${catLabels[state.gameState.mode] || "popular culture"}.
 CRITICAL: Focus specifically on: ${seed}. Do NOT include the most obvious/common answers to ensure variety.
 The "imageKeyword" MUST be the exact English Wikipedia article title (e.g. "The Matrix (franchise)", "Thriller (Michael Jackson album)").
@@ -906,20 +906,36 @@ Each item must follow this exact shape:
  * @return {string|null}               — Thumbnail URL, or null if not found
  */
 async function _fetchWikipediaImage(pageTitle) {
-    const encoded = encodeURIComponent(pageTitle);
-    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encoded}&prop=pageimages&format=json&pithumbsize=600&origin=*`;
+    const fetchThumb = async (titleToFetch) => {
+        const encoded = encodeURIComponent(titleToFetch);
+        // Added &redirects=1 to follow Wikipedia redirects automatically
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encoded}&prop=pageimages&format=json&pithumbsize=600&redirects=1&origin=*`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const page = Object.values(data?.query?.pages || {})[0];
+        return page?.thumbnail?.source || null;
+    };
 
     try {
-        const res  = await fetch(url);
-        if (!res.ok) return null;
+        // Attempt 1: Direct exact match (handles redirects natively now)
+        let img = await fetchThumb(pageTitle);
+        if (img) return img;
 
-        const data  = await res.json();
-        const pages = data?.query?.pages;
-        if (!pages) return null;
+        // Attempt 2: Auto-heal via OpenSearch
+        // Searches Wikipedia for the exact term and tries the top 3 closest auto-complete suggestions.
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(pageTitle)}&limit=3&namespace=0&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+        const suggestions = searchData[1] || [];
 
-        const page = Object.values(pages)[0];
-        return page?.thumbnail?.source || null;
-
+        for (let suggestion of suggestions) {
+            if (suggestion.toLowerCase() !== pageTitle.toLowerCase()) {
+                img = await fetchThumb(suggestion);
+                if (img) return img; // Auto-Heal successful!
+            }
+        }
+        return null;
     } catch (err) {
         console.warn(`[TheReveal] Wikipedia fetch failed for "${pageTitle}":`, err);
         return null;
