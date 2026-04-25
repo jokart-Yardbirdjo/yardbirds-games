@@ -77,7 +77,8 @@ export const state = {
             gamesPlayed: 0, hsText: 0, correctGuesses: 0, totalGuesses: 0
         },
         consensus: { gamesPlayed: 0, highScore: 0 }, 
-        who_said_it: { gamesPlayed: 0, highScore: 0 }
+        who_said_it: { gamesPlayed: 0, highScore: 0 },
+        the_reveal: { gamesPlayed: 0, highScore: 0 } 
     },
     globalHighScore: localStorage.getItem('yardbirdHighScore') || 0
 };
