@@ -1,0 +1,83 @@
+{
+  "media": [
+    {
+      "imageKeyword": "The Dark Knight (film)",
+      "answer": "The Dark Knight",
+      "wrong": ["Batman Begins", "The Avengers", "Inception"]
+    },
+    {
+      "imageKeyword": "Abbey Road",
+      "answer": "Abbey Road (The Beatles)",
+      "wrong": ["Sgt. Pepper's Lonely Hearts Club Band", "Let It Be", "Pet Sounds"]
+    },
+    {
+      "imageKeyword": "Jaws (film)",
+      "answer": "Jaws",
+      "wrong": ["Jurassic Park", "Alien", "The Meg"]
+    },
+    {
+      "imageKeyword": "Thriller (album)",
+      "answer": "Thriller (Michael Jackson)",
+      "wrong": ["Bad", "Off the Wall", "Purple Rain"]
+    },
+    {
+      "imageKeyword": "Star Wars (film)",
+      "answer": "Star Wars: A New Hope",
+      "wrong": ["The Empire Strikes Back", "Star Trek", "Dune"]
+    }
+  ],
+  "megastars": [
+    {
+      "imageKeyword": "Michael Jordan",
+      "answer": "Michael Jordan",
+      "wrong": ["LeBron James", "Kobe Bryant", "Magic Johnson"]
+    },
+    {
+      "imageKeyword": "Marilyn Monroe",
+      "answer": "Marilyn Monroe",
+      "wrong": ["Audrey Hepburn", "Elizabeth Taylor", "Grace Kelly"]
+    },
+    {
+      "imageKeyword": "Freddie Mercury",
+      "answer": "Freddie Mercury",
+      "wrong": ["David Bowie", "Mick Jagger", "Elton John"]
+    },
+    {
+      "imageKeyword": "Serena Williams",
+      "answer": "Serena Williams",
+      "wrong": ["Venus Williams", "Maria Sharapova", "Naomi Osaka"]
+    },
+    {
+      "imageKeyword": "Albert Einstein",
+      "answer": "Albert Einstein",
+      "wrong": ["Isaac Newton", "Nikola Tesla", "Thomas Edison"]
+    }
+  ],
+  "masterpieces": [
+    {
+      "imageKeyword": "Mona Lisa",
+      "answer": "Mona Lisa",
+      "wrong": ["Girl with a Pearl Earring", "The Birth of Venus", "Lady with an Ermine"]
+    },
+    {
+      "imageKeyword": "The Starry Night",
+      "answer": "The Starry Night",
+      "wrong": ["Sunflowers", "Café Terrace at Night", "The Scream"]
+    },
+    {
+      "imageKeyword": "The Scream",
+      "answer": "The Scream",
+      "wrong": ["The Starry Night", "Guernica", "The Persistence of Memory"]
+    },
+    {
+      "imageKeyword": "American Gothic",
+      "answer": "American Gothic",
+      "wrong": ["Nighthawks", "Whistler's Mother", "The Son of Man"]
+    },
+    {
+      "imageKeyword": "The Persistence of Memory",
+      "answer": "The Persistence of Memory",
+      "wrong": ["The Elephants", "The Son of Man", "Guernica"]
+    }
+  ]
+} 
