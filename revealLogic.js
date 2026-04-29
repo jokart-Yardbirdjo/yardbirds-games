@@ -853,7 +853,6 @@ async function _fetchInfiniteAIData(apiKey) {
     };
 
     // Randomized sub-themes force variety across sessions
-    // THE FIX: Removed 'photographs' and 'street art' so Masterpieces remains strictly Fine Art.
     const seedThemes = {
         movies:       ["1980s cult classics", "sci-fi and fantasy", "Oscar winners", "90s blockbusters", "animated masterpieces", "horror legends"],
         megastars:    ["historical leaders","2000s pop stars","legendary athletes","famous directors","classical composers","reality TV icons"],
@@ -863,8 +862,7 @@ async function _fetchInfiniteAIData(apiKey) {
         Math.floor(Math.random() * seedThemes[state.gameState.mode].length)
     ] || "popular culture";
 
-    // THE FIX: Enforce Art Disambiguation. 
-    // Forces the AI to use specific Wikipedia URLs so we don't accidentally pull movies or maps.
+    // Enforce Art Disambiguation
     const artInstruction = state.gameState.mode === 'masterpieces'
         ? 'CRITICAL: Many artworks share generic names. You MUST append the artist name or medium to the Wikipedia title (e.g., "The Kiss (Klimt)", "David (Michelangelo)", "The Thinker (sculpture)").'
         : '';
@@ -880,8 +878,46 @@ Each item must follow this exact shape:
 
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
-// ... (keep your existing fetch and strict JSON extraction logic from here down!)
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [{ role: "system", content: systemPrompt }],
+                temperature: 0.9   // Higher temp = more variety across sessions
+            })
+        });
 
+        if (!response.ok) throw new Error(`OpenAI HTTP ${response.status}`);
+
+        const data = await response.json();
+        const raw  = data.choices?.[0]?.message?.content?.trim() || '';
+
+        // ── AUTO-CLEANER: Strict Array Extraction ──
+        const firstBracket = raw.indexOf('[');
+        const lastBracket = raw.lastIndexOf(']');
+        
+        if (firstBracket === -1 || lastBracket === -1) {
+            throw new Error("OpenAI did not return a valid JSON array structure.");
+        }
+        
+        const cleaned = raw.substring(firstBracket, lastBracket + 1);
+        const parsed  = JSON.parse(cleaned);
+
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            throw new Error("OpenAI returned empty or non-array JSON");
+        }
+
+        revealState.queue = _shuffleArray(parsed);
+
+    } catch (err) {
+        console.error("[TheReveal] OpenAI generation failed:", err);
+        alert("AI generation failed. Falling back to Party Pack.");
+        await _loadPartyPackData();
+    }
+}
             
 /**
  * _fetchWikipediaImage(pageTitle)
