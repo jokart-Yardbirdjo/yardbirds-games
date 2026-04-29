@@ -921,65 +921,83 @@ Each item must follow this exact shape:
 /**
  * _fetchWikipediaImage(pageTitle)
  * ────────────────────────────────
- * Queries the Wikipedia REST API for a page thumbnail.
- * UPDATED: Uses a Two-Step Resolution to bypass the "CORS Redirect Trap".
- * * 1. Action API resolves the exact canonical title safely (and gets a fallback).
- * 2. REST API fetches the high-quality curated Infobox portrait.
- *
- * @param  {string}          pageTitle — Exact Wikipedia article title
- * @return {string|null}               — Thumbnail URL, or null if not found
+ * Queries Wikipedia for a page thumbnail.
+ * HYBRID APPROACH: 
+ * 1. Uses the robust Action API (the original "Tank" code) to handle redirects safely.
+ * 2. Uses the canonical title to safely ping the REST API for a high-quality portrait.
+ * 3. If the REST API fails (CORS, 404), it falls back to the Action API image seamlessly.
  */
 async function _fetchWikipediaImage(pageTitle) {
-    try {
-        // Step 1: Use the Action API to resolve the EXACT canonical title. 
-        // The Action API handles redirects natively and has rock-solid CORS (&origin=*).
-        // We also request 'pageimages' here as a safety fallback.
-        const resolveUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pageTitle)}&prop=pageimages&pithumbsize=600&redirects=1&format=json&origin=*`;
-        const resolveRes = await fetch(resolveUrl);
-        const resolveData = await resolveRes.json();
+    const fetchThumb = async (titleToFetch) => {
+        const encoded = encodeURIComponent(titleToFetch);
         
-        const pages = resolveData.query?.pages;
-        if (!pages) return null;
+        // STEP 1: The Reliable "Tank" (Your original code)
+        const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encoded}&prop=pageimages&format=json&pithumbsize=600&redirects=1&origin=*`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
         
+        const data = await res.json();
+        const pages = data?.query?.pages || {};
         const pageId = Object.keys(pages)[0];
-        if (pageId === "-1") {
-            // Auto-heal via OpenSearch if the title is completely wrong or misspelled
-            const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(pageTitle)}&limit=1&namespace=0&format=json&origin=*`;
-            const searchRes = await fetch(searchUrl);
-            const searchData = await searchRes.json();
-            const suggestions = searchData[1] || [];
-            if (suggestions.length > 0 && suggestions[0].toLowerCase() !== pageTitle.toLowerCase()) {
-                return await _fetchWikipediaImage(suggestions[0]); // Recursive heal
-            }
-            return null;
-        }
         
-        const canonicalTitle = pages[pageId].title;
-        const fallbackImage = pages[pageId].thumbnail?.source || null;
+        // If the page doesn't exist, return null so OpenSearch can try to heal it
+        if (pageId === "-1") return null; 
 
-        // Step 2: Now call the REST API using the EXACT canonical title.
-        // This prevents the 301 Redirect that causes CORS to fail in the browser.
-        const formattedTitle = encodeURIComponent(canonicalTitle.replace(/ /g, '_'));
-        const restUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${formattedTitle}`;
-        
+        // We now have the EXACT canonical title and a reliable fallback image
+        const canonicalTitle = pages[pageId].title;
+        const fallbackThumb = pages[pageId]?.thumbnail?.source || null;
+
+        // STEP 2: The "Gentle Upgrade"
+        // Now that we know the exact title, we safely ask the REST API for the premium Infobox portrait.
         try {
+            const formattedTitle = encodeURIComponent(canonicalTitle.replace(/ /g, '_'));
+            const restUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${formattedTitle}`;
+            
             const restRes = await fetch(restUrl);
             if (restRes.ok) {
-                const data = await restRes.json();
-                // The REST API heavily curates the 'thumbnail' object to be the main Infobox image
-                if (data.thumbnail && data.thumbnail.source) {
-                    return data.thumbnail.source.replace(/\/\d+px-/, '/600px-');
+                const restData = await restRes.json();
+                if (restData.thumbnail && restData.thumbnail.source) {
+                    
+                    // ── YOUR SIZE GATE ──
+                    // Reject tiny icons (like 50px stubs) so they don't stretch and blur.
+                    if (restData.thumbnail.width && restData.thumbnail.width < 100) {
+                        console.warn(`[TheReveal] Image too small (${restData.thumbnail.width}px). Using fallback.`);
+                        return fallbackThumb; 
+                    }
+
+                    return restData.thumbnail.source; // Success! We got the high-quality face.
                 }
             }
-        } catch (restErr) {
-            console.warn(`[TheReveal] REST API blocked or failed for ${canonicalTitle}.`);
+        } catch (e) {
+            // Silently swallow any CORS or network errors from the REST API.
+            console.warn(`[TheReveal] REST upgrade failed for ${canonicalTitle}. Using fallback.`);
         }
-        
-        // Step 3: If the REST API had no image or failed, use the Action API fallback
-        return fallbackImage;
 
+        // STEP 3: The Safety Net
+        // If the REST API failed, or didn't have an image, return your original reliable image.
+        return fallbackThumb;
+    };
+
+    try {
+        // Attempt 1: Direct exact match (handles redirects natively)
+        let img = await fetchThumb(pageTitle);
+        if (img) return img;
+
+        // Attempt 2: Auto-heal via OpenSearch (Your exact original logic)
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(pageTitle)}&limit=3&namespace=0&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+        const suggestions = searchData[1] || [];
+
+        for (let suggestion of suggestions) {
+            if (suggestion.toLowerCase() !== pageTitle.toLowerCase()) {
+                img = await fetchThumb(suggestion);
+                if (img) return img; // Auto-Heal successful!
+            }
+        }
+        return null;
     } catch (err) {
-        console.warn(`[TheReveal] Wikipedia fetch completely failed for "${pageTitle}":`, err);
+        console.warn(`[TheReveal] Wikipedia fetch failed for "${pageTitle}":`, err);
         return null;
     }
 }
