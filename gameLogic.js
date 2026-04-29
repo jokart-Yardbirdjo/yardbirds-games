@@ -118,19 +118,60 @@ export async function startDailyChallenge() {
         const res = await fetch('db_daily.json');
         if(!res.ok) throw new Error("Could not find db_daily.json");
         const vault = await res.json();
-        const dailyIds = vault[dayOfYear % vault.length];
         
-        const apiRes = await fetch(`https://itunes.apple.com/lookup?id=${dailyIds.join(',')}`);
-        const data = await apiRes.json();
+        // Retrieve the 3 JSON objects for today's challenge
+        const todaysTargets = vault[dayOfYear % vault.length];
         
-        state.songs = data.results.filter(t => t.previewUrl);
+        state.songs = [];
         
-        // NEW FIX: Fetch backup tracks to pad out the multiple-choice options AND fill any missing daily songs
+        // Ruthless blocklist to prevent junk tracks
+        const blocklist = /\b(cover|karaoke|tribute|instrumental|lullaby|remix|live|acoustic|mashup|compilation)\b/i;
+
+        for (const target of todaysTargets) {
+            const query = encodeURIComponent(`${target.artist} ${target.song}`);
+            const trackRes = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=15`);
+            const trackData = await trackRes.json();
+
+            if (trackData.results && trackData.results.length > 0) {
+                // Find the first result that passes our strict checks
+                const bestMatch = trackData.results.find(t => {
+                    if (!t.previewUrl) return false;
+
+                    const trackName = t.trackName.toLowerCase();
+                    const artistName = t.artistName.toLowerCase();
+                    const collectionName = (t.collectionName || "").toLowerCase();
+                    const targetSong = target.song.toLowerCase();
+                    const targetArtist = target.artist.toLowerCase();
+
+                    // 1. Baseline verification: Artist and Song names must generally match
+                    if (!trackName.includes(targetSong) && !targetSong.includes(trackName)) return false;
+                    if (!artistName.includes(targetArtist) && !targetArtist.includes(artistName)) return false;
+
+                    // 2. Filter out Covers, Karaoke, and Live versions
+                    if (blocklist.test(trackName) || blocklist.test(collectionName) || blocklist.test(artistName)) {
+                        // Edge case: Only allow it if the actual song title genuinely contains the flagged word 
+                        // (e.g., Bruce Springsteen's "Cover Me")
+                        if (!targetSong.match(blocklist)) return false;
+                    }
+
+                    return true;
+                });
+
+                if (bestMatch) {
+                    state.songs.push(bestMatch);
+                } else if (trackData.results[0].previewUrl) {
+                    // Absolute fallback: If our filter was too strict, grab the top result with audio
+                    state.songs.push(trackData.results[0]);
+                }
+            }
+        }
+        
+        // Fetch backup tracks to pad out the multiple-choice options AND fill any missing daily songs
         const padRes = await fetch(`https://itunes.apple.com/search?term=billboard+hits&limit=20&entity=song`);
         const padData = await padRes.json();
         let padTracks = padData.results.filter(t => t.previewUrl);
         
-        // If an iTunes track was region-blocked or removed, borrow a backup track so we always have 3 rounds!
+        // If an iTunes track was region-blocked or missing, borrow a backup track so we always have 3 rounds!
         while (state.songs.length < 3 && padTracks.length > 0) {
             let randomTrack = padTracks.splice(Math.floor(Math.random() * padTracks.length), 1)[0];
             if (!state.songs.some(s => s.trackId === randomTrack.trackId)) {
@@ -144,10 +185,13 @@ export async function startDailyChallenge() {
         state.roundsPerPlayer = state.maxRounds;
         state.rawScores = [0]; state.streaks = [0]; state.matchHistory = [[]];
         state.doubleRounds = []; 
+        
+        // Correct Boot Sequence
         launchGameUI();
+
     } catch (e) {
         console.error(e);
-        alert(e.message || "Daily Vault requires db_daily.json. Playing fallback...");
+        alert(e.message || "Daily Vault failed. Playing fallback...");
         const fallbackRes = await fetch(`https://itunes.apple.com/search?term=pop+rock+hits&limit=20&entity=song`);
         const fallbackData = await fallbackRes.json();
         state.globalPool = fallbackData.results.filter(t => t.previewUrl);
@@ -160,6 +204,8 @@ export async function startDailyChallenge() {
         launchGameUI();
     }
 }
+
+
 export function startGame() {
     // 🧹 GARBAGE COLLECTION: Wipe leftover data from previous cartridges
     state.songs = [];
