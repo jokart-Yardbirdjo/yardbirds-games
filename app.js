@@ -110,6 +110,12 @@ window.loadCartridge = (gameId) => {
         targetCartridge = QuoteTrivia;
         bgm.src = ''; // Quotes has its own audio vibe
     }
+    // 👇 ADD THIS BLOCK 👇
+    else if (gameId === 'the_reveal') {
+        targetCartridge = TheReveal;
+        bgm.src = 'assets/audio/quizmusic.mp3'; // Or whichever BGM track you want for this game!
+    }
+    // 👆 END NEW BLOCK 👆
     else {
         targetCartridge = SongTrivia;
         bgm.src = ''; // Song Trivia plays iTunes audio
