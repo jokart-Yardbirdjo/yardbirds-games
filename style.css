@@ -1203,6 +1203,12 @@ body.client-mode #main-title        {
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
+   /* ── Override for Home Screen (No truncation needed here) ── */
+    #game-header.home-screen #main-title {
+        padding: 0 !important;       /* Re-claim the full screen width */
+        white-space: normal;         /* Turn off the forced single-line */
+        overflow: visible;           /* Remove the ellipsis cutoff */
+    }
 
     /* Shrink large prompts so multi-word Consensus / Who Said It questions
        fit on phone screens without overflowing or requiring scroll. */
