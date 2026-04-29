@@ -1,6 +1,6 @@
 // consensusLogic.js
 import { db } from './firebase.js';
-import { state, sfxTick, sfxCheer, sfxBuzzer, colors } from './state.js';
+import { state, sfxTick, sfxCheer, sfxBuzzer, colors, bgm } from './state.js';
 
 export const manifest = {
     id: "consensus",
@@ -71,6 +71,8 @@ export function startDailyChallenge() {
 
 export function handleStop() {
     clearInterval(state.timerId);
+    bgm.pause(); // NEW
+    bgm.currentTime = 0; // NEW
     state.isProcessing = false;
 }
 
@@ -322,6 +324,9 @@ function nextRound() {
     timerElement.innerHTML = `<div class="timer-bar-container"><div id="timer-bar-fill" class="timer-bar-fill"></div></div>`;
     const timerFill = document.getElementById('timer-bar-fill');
 
+    // NEW: Start the music
+    bgm.play().catch(e => console.warn("BGM blocked by browser policy until interaction."));
+
     state.timerId = setInterval(() => {
         state.timeLeft--;
         
@@ -544,6 +549,10 @@ export function evaluateGuess(source) {
     
     state.isProcessing = true;
     clearInterval(state.timerId);
+
+    // NEW: Stop the music
+    bgm.pause();
+    bgm.currentTime = 0;
     
     document.getElementById('mc-fields').classList.add('hidden');
     let roundPts = 0;
@@ -595,6 +604,10 @@ export function evaluateMultiplayerRound(players) {
     if (state.isProcessing) return;
     state.isProcessing = true;
     clearInterval(state.timerId);
+
+    // NEW: Stop the music
+    bgm.pause();
+    bgm.currentTime = 0;
 
     try {
         const q = state.songs[state.curIdx];
