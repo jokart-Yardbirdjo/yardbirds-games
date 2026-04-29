@@ -15,7 +15,9 @@
 // ==========================================
 // PHASE 1: IMPORTS & CARTRIDGES
 // ==========================================
-import { state } from './state.js';
+// Consolidate the state and bgm import here!
+import { state, bgm } from './state.js';
+
 import { 
     showModal, hideModal, setMode, setSub, setPill, setLevel, 
     renderPlaylist, setupDailyButton, buildSetupScreen, updatePlatformUI 
@@ -33,10 +35,8 @@ import * as Consensus from './consensusLogic.js';
 import * as QuoteTrivia from './quoteLogic.js';
 import * as TheReveal from './revealLogic.js';
 
-import { state, bgm } from './state.js';
-
 // Default the system to Song Trivia on load to prevent null references
-window.activeCartridge = SongTrivia; 
+window.activeCartridge = SongTrivia;
 
 
 // ==========================================
