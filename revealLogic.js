@@ -841,18 +841,6 @@ async function _loadPartyPackData() {
  * _fetchInfiniteAIData(apiKey)
  * ─────────────────────────────
  * Calls OpenAI GPT-4o-mini to generate a fresh batch of round subjects.
- * Uses a randomized seed theme to prevent the AI from returning the same
- * obvious answers (e.g., "Mona Lisa" every single time).
- *
- * OPENAI RESPONSE FORMAT (strictly enforced via prompt):
- *   [
- *     { "imageKeyword": "Wikipedia_Page_Title", "answer": "Clean Name", "wrong": ["A","B","C"] }
- *   ]
- *
- * FALLBACK: If OpenAI fails or returns malformed JSON, silently falls back
- * to Party Pack (loadPartyPackData) so the game still launches.
- *
- * @param {string} apiKey — OpenAI API key starting with "sk-"
  */
 async function _fetchInfiniteAIData(apiKey) {
     _setFeedback(`<div class="reveal-loading-msg">✨ AI is generating unique content...</div>`);
@@ -861,63 +849,40 @@ async function _fetchInfiniteAIData(apiKey) {
     const catLabels = {
         movies:       "Famous Theatrical Movies",
         megastars:    "A-List Actors, Historical Figures, Pop Icons, and Star Athletes",
-        masterpieces: "The most famous Paintings and Sculptures in history"
+        masterpieces: "The most famous and recognizable Paintings and Sculptures in history"
     };
 
     // Randomized sub-themes force variety across sessions
+    // THE FIX: Removed 'photographs' and 'street art' so Masterpieces remains strictly Fine Art.
     const seedThemes = {
-        movies:       ["1980s cult classics", "sci-fi and fantasy", "Oscar winners", "90s blockbusters", "animated masterpieces", "horror legends"], // 👈 CHANGED
+        movies:       ["1980s cult classics", "sci-fi and fantasy", "Oscar winners", "90s blockbusters", "animated masterpieces", "horror legends"],
         megastars:    ["historical leaders","2000s pop stars","legendary athletes","famous directors","classical composers","reality TV icons"],
-        masterpieces: ["Renaissance art","modern sculptures","impressionist paintings","famous 20th-century photographs","surrealism","street art"]
+        masterpieces: ["Renaissance paintings", "famous historical sculptures", "Impressionist masterpieces", "Baroque art", "Surrealist paintings", "Post-Impressionism"]
     };
     const seed = seedThemes[state.gameState.mode]?.[
         Math.floor(Math.random() * seedThemes[state.gameState.mode].length)
     ] || "popular culture";
 
+    // THE FIX: Enforce Art Disambiguation. 
+    // Forces the AI to use specific Wikipedia URLs so we don't accidentally pull movies or maps.
+    const artInstruction = state.gameState.mode === 'masterpieces'
+        ? 'CRITICAL: Many artworks share generic names. You MUST append the artist name or medium to the Wikipedia title (e.g., "The Kiss (Klimt)", "David (Michelangelo)", "The Thinker (sculpture)").'
+        : '';
+
     const systemPrompt = `Generate a JSON array of ${state.maxRounds + 8} trivia items for a visual guessing game.
 Category: ${catLabels[state.gameState.mode] || "popular culture"}.
 CRITICAL: Focus specifically on: ${seed}. Do NOT include the most obvious/common answers to ensure variety.
 The "imageKeyword" MUST be the exact English Wikipedia article title (e.g. "The Matrix (franchise)", "Thriller (Michael Jackson album)").
+${artInstruction}
 Return ONLY a valid JSON array — no markdown, no backticks, no commentary.
 Each item must follow this exact shape:
 [{ "imageKeyword": "Wikipedia_Title", "answer": "Clean Display Name", "wrong": ["Wrong 1", "Wrong 2", "Wrong 3"] }]`;
 
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-4o-mini',
-                messages: [{ role: "system", content: systemPrompt }],
-                temperature: 0.9   // Higher temp = more variety across sessions
-            })
-        });
+// ... (keep your existing fetch and strict JSON extraction logic from here down!)
 
-        if (!response.ok) throw new Error(`OpenAI HTTP ${response.status}`);
-
-        const data = await response.json();
-        const raw  = data.choices?.[0]?.message?.content?.trim() || '';
-
-        // Strip any accidental markdown code fences the AI might add
-        const cleaned = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed  = JSON.parse(cleaned);
-
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-            throw new Error("OpenAI returned empty or non-array JSON");
-        }
-
-        revealState.queue = _shuffleArray(parsed);
-
-    } catch (err) {
-        console.error("[TheReveal] OpenAI generation failed:", err);
-        alert("AI generation failed. Falling back to Party Pack.");
-        await _loadPartyPackData();
-    }
-}
-
+            
 /**
  * _fetchWikipediaImage(pageTitle)
  * ────────────────────────────────
@@ -983,14 +948,16 @@ async function _fetchWikipediaImage(pageTitle) {
         let img = await fetchThumb(pageTitle);
         if (img) return img;
 
-        // Attempt 2: Auto-heal via OpenSearch (Your exact original logic)
+        // Attempt 2: Auto-heal via OpenSearch
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(pageTitle)}&limit=3&namespace=0&format=json&origin=*`;
         const searchRes = await fetch(searchUrl);
         const searchData = await searchRes.json();
         const suggestions = searchData[1] || [];
 
         for (let suggestion of suggestions) {
-            if (suggestion.toLowerCase() !== pageTitle.toLowerCase()) {
+            // THE FIX: Strict equality instead of toLowerCase().
+            // This allows OpenSearch to auto-correct capitalization errors!
+            if (suggestion !== pageTitle) {
                 img = await fetchThumb(suggestion);
                 if (img) return img; // Auto-Heal successful!
             }
