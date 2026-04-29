@@ -33,6 +33,8 @@ import * as Consensus from './consensusLogic.js';
 import * as QuoteTrivia from './quoteLogic.js';
 import * as TheReveal from './revealLogic.js';
 
+import { state, bgm } from './state.js';
+
 // Default the system to Song Trivia on load to prevent null references
 window.activeCartridge = SongTrivia; 
 
@@ -95,12 +97,23 @@ function validateCartridge(cartridge) {
 window.loadCartridge = (gameId) => {
     let targetCartridge;
     
-    // Routing Switchboard
-    if (gameId === 'fast_math') targetCartridge = FastMath;
-    else if (gameId === 'consensus') targetCartridge = Consensus;
-    else if (gameId === 'who_said_it') targetCartridge = QuoteTrivia;
-    else if (gameId === 'the_reveal') targetCartridge = TheReveal;
-    else targetCartridge = SongTrivia;
+    // Routing Switchboard & Dynamic BGM Setup
+    if (gameId === 'fast_math') {
+        targetCartridge = FastMath;
+        bgm.src = 'assets/audio/quizmusic.mp3'; 
+    }
+    else if (gameId === 'consensus') {
+        targetCartridge = Consensus;
+        bgm.src = 'assets/audio/quizmusic.mp3'; 
+    }
+    else if (gameId === 'who_said_it') {
+        targetCartridge = QuoteTrivia;
+        bgm.src = ''; // Quotes has its own audio vibe
+    }
+    else {
+        targetCartridge = SongTrivia;
+        bgm.src = ''; // Song Trivia plays iTunes audio
+    }
     
     // Strict Validation: Will throw an error if the cartridge is incomplete
     validateCartridge(targetCartridge);
