@@ -94,7 +94,7 @@ export const sfxCheer = new Audio('https://actions.google.com/sounds/v1/crowds/c
 export const sfxBuzzer = new Audio('https://actions.google.com/sounds/v1/alarms/buzzer_alarm.ogg');
 
 // NEW: Global Background Music Player (Source set dynamically by app.js)
-export const bgm = new Audio();
+export const bgm = new Audio('./assets/audio/quizmusic.mp3');
 bgm.loop = true;
 
 // Mixing Levels
