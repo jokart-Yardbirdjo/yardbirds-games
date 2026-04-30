@@ -96,6 +96,7 @@ export function shareChallenge() {
 
 export function startGame() {
     // 🧹 GARBAGE COLLECTION: Wipe leftover data from previous cartridges
+    state.curIdx = 0;
     state.songs = [];
     state.globalPool = [];
     state.matchHistory = [];
