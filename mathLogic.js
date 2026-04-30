@@ -264,6 +264,7 @@ let _currentProblem = null;
 
 export function startGame() {
     // Garbage collection — wipe any leftover data from other cartridges
+    state.curIdx = 0;
     state.songs = [];
     state.globalPool = [];
     state.matchHistory = [];
