@@ -172,14 +172,28 @@ window.selectGame = (gameId) => {
 
 window.startDailyChallenge = () => window.activeCartridge.startDailyChallenge();
 
-// ── SILENT AUDIO UNLOCKER ──
+// ── SILENT AUDIO UNLOCKER (PROMISE FIX) ──
 window.startGame = () => {
-    // Browsers block audio if there are 'await' network calls before play().
-    // By playing and instantly pausing exactly when the user clicks "Let's Go!", 
-    // we permanently unlock the audio element for the session.
+    // Browsers require a physical click to unlock audio.
     if (bgm) {
-        bgm.play().catch(() => {}); // Catch prevents console errors if it's already playing
-        bgm.pause();
+        // 1. Mute the audio so the user doesn't hear a split-second glitch
+        bgm.volume = 0; 
+        
+        // 2. Trigger the play event and capture the Promise
+        const unlockPromise = bgm.play();
+        
+        // 3. Wait for the browser to successfully register the play event
+        if (unlockPromise !== undefined) {
+            unlockPromise.then(() => {
+                // Audio is now officially unlocked! 
+                // Pause it, rewind it, and unmute it for when the game actually starts.
+                bgm.pause();
+                bgm.currentTime = 0;
+                bgm.volume = 1; 
+            }).catch(e => {
+                console.warn("Audio unlock caught a policy error:", e);
+            });
+        }
     }
     
     // Now trigger the actual game boot sequence
