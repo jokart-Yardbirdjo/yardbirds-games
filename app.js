@@ -225,25 +225,41 @@ buildCartridgeMenu(cartridgeRegistry);
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    // ── THE NUCLEAR AUDIO UNLOCKER ──
-    // The exact millisecond the user taps ANYWHERE on the screen for the first time,
-    // silently unlock the audio engine. 
+    // ── LOUD DIAGNOSTIC AUDIO UNLOCKER ──
     let audioUnlocked = false;
-    document.body.addEventListener('pointerdown', () => {
-        if (!audioUnlocked && bgm) {
-            bgm.volume = 0; // Mute it
-            const unlockPromise = bgm.play();
-            
-            if (unlockPromise !== undefined) {
-                unlockPromise.then(() => {
-                    bgm.pause();
-                    bgm.currentTime = 0;
-                    bgm.volume = 1; // Unmute it for later
-                    audioUnlocked = true; // Never run this again
-                }).catch(e => console.warn("Audio unlock pending..."));
-            }
+    
+    const unlockAudio = () => {
+        if (audioUnlocked) return;
+        
+        console.log("🔊 Attempting audio unlock...");
+        
+        if (!bgm) {
+            console.error("❌ BGM object is completely missing or undefined in app.js!");
+            return;
         }
-    }, { once: true }); // Automatically destroys the listener after the first tap
+
+        bgm.volume = 0; 
+        const unlockPromise = bgm.play();
+        
+        if (unlockPromise !== undefined) {
+            unlockPromise.then(() => {
+                console.log("✅ Audio successfully unlocked!");
+                bgm.pause();
+                bgm.currentTime = 0;
+                bgm.volume = 1; 
+                audioUnlocked = true; 
+                
+                // Clean up listeners so it doesn't fire again
+                document.body.removeEventListener('click', unlockAudio);
+                document.body.removeEventListener('touchstart', unlockAudio);
+            }).catch(e => {
+                console.error("❌ Audio unlock Promise rejected. Reason:", e.message);
+            });
+        }
+    };
+
+    document.body.addEventListener('click', unlockAudio);
+    document.body.addEventListener('touchstart', unlockAudio);
            
     const triggerSubmit = (e) => { 
         if (e.key === 'Enter') document.getElementById('submit-btn').click(); 
